@@ -128,8 +128,9 @@ A shared core is the goal, not proof that every API is portable. Record
 separately whether each platform was configured, compiled, tested, and actually
 launched. In this repository Linux was configured, compiled, tested, and launched
 under Xvfb with software GL. Windows is configured, compiled and tested by CI on
-a hosted runner that has no usable display, so the interactive GUI and its OpenGL
-rendering are still unverified on Windows. macOS has not been touched.
+a hosted runner (56/56 tests, zero warnings), but that runner has no usable
+display, so the interactive GUI and its OpenGL rendering are still unverified on
+Windows. macOS has not been touched.
 
 Two Windows-specific details are worth remembering, because both caused real
 failures:

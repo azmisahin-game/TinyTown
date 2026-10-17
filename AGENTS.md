@@ -96,6 +96,9 @@ Windows build facts that cost real debugging time:
   `SDL2-<version>`, **not** `SDL2-<version>-VC`, and its CMake package config is
   at `<root>/cmake/sdl2-config.cmake`, **not** `<root>/lib/cmake/SDL2`. Pass
   `-DSDL2_DIR=<root>/cmake`.
+- CMake records a value passed with `-D` as cache type `UNINITIALIZED`, not
+  `PATH`. Match `^SDL2_DIR:` rather than `^SDL2_DIR:PATH=` when reading
+  `CMakeCache.txt`.
 - `src/app/main.cpp` defines `SDL_MAIN_HANDLED` and supplies its own `main`, so it
   must call `SDL_SetMainReady()` before `SDL_Init()`. Removing that call breaks
   the Windows build at run time, not compile time.
@@ -107,5 +110,9 @@ Windows build facts that cost real debugging time:
 - PowerShell validation is possible without Windows: install PowerShell 7 for
   Linux and parse-check or run the workflow scripts with
   `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`.
+
+Last verified CI run for both jobs (Linux and Windows, 56/56 tests each):
+<https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637>
+
 
 

@@ -7,11 +7,13 @@ observed state of this repository, not intentions.
 
 - [x] CMake configure succeeds from a clean build directory.
 - [x] Native build succeeds on each platform claimed in the README.
-      Linux verified locally. Windows verified by CI (configure, build, ctest).
+      Linux verified locally. Windows verified by CI (configure, build, ctest):
+      run [39009303637](https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637)
+      passed with 56/56 tests and zero MSVC warnings.
 - [x] Unit tests cover deterministic world generation and agent/task/path logic.
 - [x] CI runs the documented build and test commands.
-      Observed: the first run failed on Windows; after the fixes below it was
-      re-run. See "CI history" for exact results.
+      Both jobs are green as of run `39009303637`. Earlier failures and their
+      causes are recorded under "CI history" below.
 - [x] The application is launched manually on at least one graphics-capable
       environment for each release candidate.
       Launched under Xvfb with Mesa llvmpipe (real GL context, real frames, real
@@ -24,6 +26,36 @@ observed state of this repository, not intentions.
 | Run | Commit | Linux | Windows | Windows failure point |
 | --- | --- | --- | --- | --- |
 | [39007442092](https://github.com/azmisahin-game/TinyTown/actions/runs/39007442092) | `831e948` | Passed (47 s) | **Failed** | `Download SDL2 development libraries` |
+| [39008987314](https://github.com/azmisahin-game/TinyTown/actions/runs/39008987314) | `00597ca` | Passed | **Failed** | `Confirm the intended SDL2 SDK was resolved` |
+| [39009303637](https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637) | `aeef50a` | **Passed** | **Passed** | — |
+
+The final run is the evidence that both jobs are green. Step-level results for
+`39009303637`:
+
+Linux — all 10 steps passed: install dependencies, toolchain report, configure,
+build, ctest, direct test-binary run, offscreen render, artifact upload. The
+offscreen step reported
+`/tmp/ci-smoke.png: PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced`.
+
+Windows — all 12 steps passed: MSVC setup, SDL2 cache restore, SDK verify or
+install, configure, resolved-SDK assertion, build, ctest, direct test-binary run,
+DLL staging, `--help` start-up check. Observed output:
+
+```text
+SDL2 SDK installed and validated at C:\SDL2
+CMake resolved SDL2_DIR=C:\SDL2\cmake
+Confirmed: CMake used the SDL2 SDK installed by this job
+1/1 Test #1: tinytown_core_tests ..............   Passed    0.04 sec
+100% tests passed, 0 tests failed out of 1
+56 passed, 0 failed, 0 assertion failure(s)
+Staged C:\SDL2\lib\x64\SDL2.dll next to the executable
+tinytown.exe --help exited with code 0
+```
+
+Zero MSVC warnings (`warning C####`) and zero compiler errors were present in
+that log.
+
+### First failure: the SDL2 download step
 
 The first Windows run failed at the SDK step, before configure/build/test. The
 logged error was:
@@ -47,6 +79,21 @@ serve a byte-identical archive (SHA-256
 `28681dbef9c31a2bb4af6cbda90fdabc27c7415d65b9393da83d5abd12c4a265`, 6,183,659
 bytes), so the download URL itself was never the problem.
 
+### Second failure: the resolved-SDK assertion
+
+After the SDK step was fixed, the job reached configure but failed at the new
+assertion step with `SDL2_DIR was not recorded in CMakeCache.txt`, even though
+configure logged `SDL2 found via SDL2_DIR=C:\SDL2\cmake`.
+
+Cause: the step matched `^SDL2_DIR:PATH=`, but CMake records a value passed with
+`-D` as type `UNINITIALIZED`:
+
+```text
+$ cmake -S . -B build -DSDL2_DIR=/usr/lib/x86_64-linux-gnu/cmake/SDL2
+$ grep SDL2_DIR build/CMakeCache.txt
+SDL2_DIR:UNINITIALIZED=/usr/lib/x86_64-linux-gnu/cmake/SDL2
+```
+
 ### Fixes applied
 
 1. **SDK install rewritten** (`Verify or install SDL2 SDK`): discovers the real
@@ -61,10 +108,12 @@ bytes), so the download URL itself was never the problem.
 2. **`SDL2_DIR` corrected** to `<root>\cmake`, which is where the archive
    actually puts `sdl2-config.cmake`.
 3. **Resolved SDK is asserted** (`Confirm the intended SDL2 SDK was resolved`):
-   `find_package(SDL2)` accepts any SDL2 it can find, so the job now reads
-   `SDL2_DIR` back out of `CMakeCache.txt` and fails unless it matches the SDK
-   this job installed. Without this, the job could pass while linking an
-   unrelated SDL2.
+   `find_package(SDL2)` accepts any SDL2 it can find, so the job reads `SDL2_DIR`
+   back out of `CMakeCache.txt` and fails unless it matches the SDK this job
+   installed. Without this, the job could pass while linking an unrelated SDL2.
+   The check matches any cache entry type, dumps every SDL2 line when the entry
+   is missing, and compares with an ordinal case-insensitive prefix test after
+   normalising separators.
 4. **`SDL_SetMainReady()` added** before `SDL_Init()` in `src/app/main.cpp`. The
    program defines `SDL_MAIN_HANDLED` and supplies its own `main`, and SDL
    documents that such an application must call `SDL_SetMainReady()` first.
@@ -77,7 +126,8 @@ bytes), so the download URL itself was never the problem.
 The install logic was executed and validated locally with PowerShell 7.4.6
 against the real archive: clean install, cache-hit reuse, corrupt-cache rebuild,
 and total-download-failure all behaved as intended (the failure path exited 1
-with full diagnostics). The PowerShell syntax of every new step was parse-checked.
+with full diagnostics). The assertion was checked against all five cache entry
+types. The PowerShell syntax of every new step was parse-checked.
 
 ## Runtime behaviour
 

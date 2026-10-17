@@ -1,0 +1,35 @@
+# CMake/native build output
+/build/
+/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDE and platform output
+.vs/
+.vscode/ipch/
+.idea/
+.DS_Store
+Thumbs.db
+*.user
+*.suo
+
+# Executables and debug symbols
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.ilk
+*.obj
+*.o
+*.a
+*.lib
+
+# Generated captures (keep curated examples separately under docs/media)
+/captures/
+*.ppm
+*.wav
+*.mp4

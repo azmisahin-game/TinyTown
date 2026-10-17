@@ -4,6 +4,11 @@
 
 namespace tt {
 
+void Session::cycleLanguage() {
+    language_ = language_ == localization::Language::Turkish ? localization::Language::English
+                                                            : localization::Language::Turkish;
+}
+
 void Session::selectNextAgent(int agentCount) {
     if (agentCount <= 0) {
         selectedAgent_ = 0;

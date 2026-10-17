@@ -49,6 +49,9 @@ std::string describe(const T& v) {
         return std::string(toString(v));
     } else if constexpr (std::is_same_v<D, bool>) {
         return v ? "true" : "false";
+    } else if constexpr (std::is_enum_v<D>) {
+        // Enums without a toString() still need a readable value in failures.
+        return std::to_string(static_cast<long long>(v));
     } else if constexpr (std::is_arithmetic_v<D>) {
         return std::to_string(v);
     } else {

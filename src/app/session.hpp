@@ -12,6 +12,7 @@
 
 #include "core/camera.hpp"
 #include "core/simulation.hpp"
+#include "ui/localization.hpp"
 
 namespace tt {
 
@@ -36,6 +37,11 @@ public:
     void releaseMouseCapture() { mouseCaptured_ = false; }
     void toggleOverview() { overview_ = !overview_; }
     void setOverview(bool on) { overview_ = on; }
+
+    // Cycle the interface language. Turkish is the default, so one press moves
+    // to English and the next returns to Turkish.
+    void cycleLanguage();
+    void setLanguage(localization::Language language) { language_ = language; }
 
     // Cycle to the next agent. Safe when there are no agents.
     void selectNextAgent(int agentCount);
@@ -67,6 +73,7 @@ public:
     bool showHelp() const { return showHelp_; }
     bool mouseCaptured() const { return mouseCaptured_; }
     bool overview() const { return overview_; }
+    localization::Language language() const { return language_; }
     int selectedAgent() const { return selectedAgent_; }
     float accumulator() const { return accumulator_; }
     float wallClock() const { return wallClock_; }
@@ -78,6 +85,8 @@ private:
     bool showHelp_ = true;
     bool mouseCaptured_ = false;
     bool overview_ = false;
+    // Turkish is the product default; English is one key press away.
+    localization::Language language_ = localization::Language::Turkish;
     bool resetRequested_ = false;
     bool agentResetRequested_ = false;
     bool screenshotRequested_ = false;

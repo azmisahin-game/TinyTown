@@ -26,7 +26,13 @@ add_library(tinytown_core STATIC
     src/core/pathfinding.cpp
     src/core/simulation.cpp
     src/core/camera.cpp
-    src/app/session.cpp)
+    src/app/session.cpp
+    # The bitmap font and the language tables are pure data with no SDL or
+    # OpenGL dependency, so they live in the headless library. That lets the
+    # test binary check glyph coverage and translations without a window, and
+    # lets Session own the active language.
+    src/ui/font5x9.cpp
+    src/ui/localization.cpp)
 
 target_include_directories(tinytown_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_compile_features(tinytown_core PUBLIC cxx_std_20)
@@ -59,7 +65,6 @@ if(TINYTOWN_BUILD_APP)
         src/app/main.cpp
         src/app/image_io.cpp
         src/render/renderer.cpp
-        src/ui/font5x7.cpp
         src/ui/hud.cpp)
 
     target_include_directories(tinytown PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -96,8 +101,8 @@ if(TINYTOWN_BUILD_TESTS)
         tests/test_simulation.cpp
         tests/test_camera.cpp
         tests/test_font.cpp
-        tests/test_session.cpp
-        src/ui/font5x7.cpp)
+        tests/test_localization.cpp
+        tests/test_session.cpp)
 
     target_include_directories(tinytown_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
     target_link_libraries(tinytown_tests PRIVATE tinytown_core)

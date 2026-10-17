@@ -28,6 +28,7 @@
 #include "core/simulation.hpp"
 #include "render/renderer.hpp"
 #include "ui/hud.hpp"
+#include "ui/localization.hpp"
 
 namespace {
 
@@ -58,51 +59,60 @@ struct Options {
     float cameraZ = 0.0f;
     bool hasEyeHeight = false;
     float eyeHeight = 1.7f;
+    // Turkish is the product default; --lang overrides it.
+    tt::localization::Language language = tt::localization::Language::Turkish;
 };
 
-void printUsage(const char* exe) {
-    std::printf(
-        "TinyTown v0.1 — a tiny procedural town with simple agents\n"
-        "\n"
-        "Usage: %s [options]\n"
-        "\n"
-        "Options:\n"
-        "  --seed <n>            world seed (default 1337)\n"
-        "  --agents <n>          number of agents (default 3)\n"
-        "  --width <px>          window width (default 1280)\n"
-        "  --height <px>         window height (default 720)\n"
-        "  --screenshot <path>   render for --screenshot-seconds then write an\n"
-        "                        image and exit (no interaction)\n"
-        "  --screenshot-seconds <s>  simulated seconds before the capture (default 3)\n"
-        "  --yaw <radians>       initial camera yaw\n"
-        "  --pitch <radians>     initial camera pitch\n"
-        "  --camera <x> <z>      initial camera ground position\n"
-        "  --eye <metres>        initial eye height (a high value starts in\n"
-        "                        overview mode looking down at the town)\n"
-        "  --help                show this message\n"
-        "\n"
-        "Controls (interactive mode):\n"
-        "  W A S D / arrows      move\n"
-        "  Shift                 sprint\n"
-        "  Mouse                 look (after pressing M to capture the cursor)\n"
-        "  M                     toggle mouse capture\n"
-        "  Tab / 1-9             select agent\n"
-        "  Left click            select the agent under the cursor\n"
-        "  P or Space            pause / resume the simulation\n"
-        "  R                     reset the whole simulation to the seed\n"
-        "  N                     reset the selected agent only\n"
-        "  H or F1               toggle this help overlay\n"
-        "  F2                    save a screenshot into captures/\n"
-        "  Esc                   release the mouse, or quit when it is released\n",
-        exe);
+// Prints the quick-start text in the given language. Used by --help and by the
+// packaged QUICKSTART file, so both stay in step.
+void printUsage(const char* exe, tt::localization::Language language) {
+    using tt::localization::Key;
+    using tt::localization::text;
+
+    std::printf("%s\n\n", text(language, Key::QuickStartTitle));
+    // The usage line contains one %s for the executable path.
+    std::printf(text(language, Key::UsageLine), exe);
+    std::printf("\n\n");
+
+    std::printf("%s\n", text(language, Key::OptionsHeading));
+    const Key optionKeys[] = {
+        Key::OptionSeed,       Key::OptionAgents,     Key::OptionWidth,
+        Key::OptionHeight,     Key::OptionScreenshot, Key::OptionScreenshotSeconds,
+        Key::OptionYaw,        Key::OptionPitch,      Key::OptionCamera,
+        Key::OptionEye,        Key::OptionLang,       Key::OptionHelp,
+    };
+    for (Key key : optionKeys) {
+        std::printf("%s\n", text(language, key));
+    }
+
+    std::printf("\n%s\n", text(language, Key::ControlsHeading));
+    const Key controlKeys[] = {
+        Key::ControlMove,        Key::ControlSprint,       Key::ControlMouse,
+        Key::ControlMouseCapture, Key::ControlView,        Key::ControlSelect,
+        Key::ControlClick,       Key::ControlPause,        Key::ControlReset,
+        Key::ControlResetAgent,  Key::ControlLanguage,     Key::ControlHelp,
+        Key::ControlScreenshot,  Key::ControlEsc,
+    };
+    for (Key key : controlKeys) {
+        std::printf("%s\n", text(language, key));
+    }
+
+    std::printf("\n%s\n", text(language, Key::ScopeNote));
 }
 
 bool parseArgs(int argc, char** argv, Options& options) {
+    // Errors are reported in the language selected so far, so a Turkish user
+    // sees Turkish messages from the very first failure.
+    auto report = [&](tt::localization::Key key, const char* detail) {
+        std::fprintf(stderr, tt::localization::text(options.language, key), detail);
+        std::fprintf(stderr, "\n");
+    };
+
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         auto nextValue = [&](const char* name) -> const char* {
             if (i + 1 >= argc) {
-                std::fprintf(stderr, "error: %s needs a value\n", name);
+                report(tt::localization::Key::ErrorOptionNeedsValue, name);
                 return nullptr;
             }
             return argv[++i];
@@ -161,30 +171,21 @@ bool parseArgs(int argc, char** argv, Options& options) {
             options.eyeHeight = std::max(0.2f, static_cast<float>(std::atof(v)));
         } else if (arg == "--print-agents") {
             options.printAgents = true;
+        } else if (arg == "--lang") {
+            const char* v = nextValue("--lang");
+            if (!v) return false;
+            tt::localization::Language requested = options.language;
+            if (!tt::localization::parseLanguage(v, requested)) {
+                std::fprintf(stderr, "error: unknown language '%s' (expected tr or en)\n", v);
+                return false;
+            }
+            options.language = requested;
         } else {
-            std::fprintf(stderr, "error: unknown option '%s'\n", arg.c_str());
+            report(tt::localization::Key::ErrorUnknownOption, arg.c_str());
             return false;
         }
     }
     return true;
-}
-
-std::vector<std::string> buildHelpLines() {
-    return {
-        "TINYTOWN V0.1",
-        "W A S D / ARROWS   MOVE",
-        "SHIFT              SPRINT",
-        "MOUSE              LOOK  (PRESS M TO CAPTURE)",
-        "M                  TOGGLE MOUSE CAPTURE",
-        "V                  TOGGLE OVERVIEW / STREET CAMERA",
-        "TAB / 1-9 / CLICK  SELECT AGENT",
-        "P / SPACE          PAUSE OR RESUME",
-        "R                  RESET WORLD TO SEED",
-        "N                  RESET SELECTED AGENT",
-        "F2                 SAVE SCREENSHOT",
-        "H / F1             TOGGLE THIS HELP",
-        "ESC                RELEASE MOUSE, THEN QUIT",
-    };
 }
 
 // Project a world point to screen coordinates using the matrices OpenGL is
@@ -276,15 +277,20 @@ private:
 }  // namespace
 
 int main(int argc, char** argv) {
+    using tt::localization::Key;
+    using tt::localization::Language;
+    using tt::localization::text;
+
     Options options;
     if (!parseArgs(argc, argv, options)) {
-        printUsage(argv[0]);
+        printUsage(argv[0], options.language);
         return 2;
     }
     if (options.showHelp) {
-        printUsage(argv[0]);
+        printUsage(argv[0], options.language);
         return 0;
     }
+    Language language = options.language;
 
     // We provide our own main() and define SDL_MAIN_HANDLED above, so SDL must
     // be told that the application entry point is already handled. Without this
@@ -294,7 +300,8 @@ int main(int argc, char** argv) {
     SDL_SetMainReady();
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-        std::fprintf(stderr, "error: SDL_Init failed: %s\n", SDL_GetError());
+        std::fprintf(stderr, text(language, Key::ErrorSdlInit), SDL_GetError());
+        std::fprintf(stderr, "\n");
         return 1;
     }
 
@@ -320,15 +327,16 @@ int main(int argc, char** argv) {
                                          SDL_WINDOWPOS_CENTERED, options.width, options.height,
                                          windowFlags);
     if (window == nullptr) {
-        std::fprintf(stderr, "error: SDL_CreateWindow failed: %s\n", SDL_GetError());
+        std::fprintf(stderr, text(language, Key::ErrorSdlWindow), SDL_GetError());
+        std::fprintf(stderr, "\n");
         SDL_Quit();
         return 1;
     }
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
     if (glContext == nullptr) {
-        std::fprintf(stderr, "error: could not create an OpenGL context: %s\n", SDL_GetError());
-        std::fprintf(stderr, "       a graphics driver (or a software GL like Mesa) is required\n");
+        std::fprintf(stderr, text(language, Key::ErrorGlContext), SDL_GetError());
+        std::fprintf(stderr, "\n%s\n", text(language, Key::ErrorGlContextHint));
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
@@ -338,7 +346,8 @@ int main(int argc, char** argv) {
     tt::Renderer renderer;
     std::string renderError;
     if (!renderer.initialize(renderError)) {
-        std::fprintf(stderr, "error: renderer initialisation failed: %s\n", renderError.c_str());
+        std::fprintf(stderr, text(language, Key::ErrorRendererInit), renderError.c_str());
+        std::fprintf(stderr, "\n");
         SDL_GL_DeleteContext(glContext);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -374,7 +383,6 @@ int main(int argc, char** argv) {
                                  : (overviewMode ? overviewEyeHeight : streetEyeHeight);
 
     tt::ui::Hud hud;
-    std::vector<std::string> helpLines = buildHelpLines();
 
     const bool interactive = !options.screenshotMode;
     bool running = true;
@@ -386,6 +394,8 @@ int main(int argc, char** argv) {
     sessionConfig.fixedStep = kFixedStep;
     sessionConfig.maxFrameDelta = kMaxFrameDelta;
     session.configure(sessionConfig);
+    // The language chosen on the command line is the starting language.
+    session.setLanguage(language);
 
     // The overview toggle lives on Session; the camera reacts to it here.
     auto applyViewMode = [&]() {
@@ -403,13 +413,14 @@ int main(int argc, char** argv) {
     KeyEdge keyF2;
     KeyEdge keyM;
     KeyEdge keyV;
+    KeyEdge keyL;
     KeyEdge keyEsc;
     KeyEdge numberKeys[9];
 
     if (interactive) {
-        std::printf("TinyTown v0.1 — seed %llu, %d agents\n",
+        std::printf(text(language, Key::ConsoleBanner),
                     static_cast<unsigned long long>(options.seed), options.agents);
-        std::printf("Press H for controls. Press R to reset. Esc quits.\n");
+        std::printf("\n%s\n", text(language, Key::ConsoleHint));
     }
 
     Uint64 previousTicks = SDL_GetPerformanceCounter();
@@ -507,6 +518,15 @@ int main(int argc, char** argv) {
                                 session.toggleOverview();
                                 applyViewMode();
                             }
+                        } else if (key == SDLK_l) {
+                            // L is free: the language key must not collide with
+                            // an existing control.
+                            if (keyL.pressed(true)) {
+                                session.cycleLanguage();
+                                language = session.language();
+                                std::printf("%s: %s\n", text(language, Key::HelpLanguage),
+                                            tt::localization::languageName(language));
+                            }
                         } else if (key == SDLK_m) {
                             if (keyM.pressed(true)) {
                                 session.toggleMouseCapture();
@@ -532,6 +552,7 @@ int main(int argc, char** argv) {
                         keyF2.pressed(false);
                         keyM.pressed(false);
                         keyV.pressed(false);
+                        keyL.pressed(false);
                         keyEsc.pressed(false);
                         if (key >= SDLK_1 && key <= SDLK_9) numberKeys[key - SDLK_1].pressed(false);
                     }
@@ -552,8 +573,9 @@ int main(int argc, char** argv) {
                          options.hasPitch ? options.pitch : simulation.world().spawnPitch);
             applyViewMode();
             session.selectAgent(0, static_cast<int>(simulation.agents().size()));
-            std::printf("World reset to seed %llu\n",
+            std::printf(text(language, Key::WorldReset),
                         static_cast<unsigned long long>(simConfig.seed));
+            std::printf("\n");
         }
         if (session.takeAgentResetRequest()) {
             simulation.resetAgent(session.selectedAgent());
@@ -594,8 +616,11 @@ int main(int argc, char** argv) {
         const float hudScale = tt::clampf(static_cast<float>(drawableHeight) / 480.0f, 1.0f, 3.0f);
 
         if (session.showHelp()) {
+            // The overlay always follows the session language, so pressing L
+            // changes the visible interface immediately.
+            hud.setLanguage(session.language());
             hud.begin(drawableWidth, drawableHeight);
-            hud.drawHelp(helpLines, 12.0f, 12.0f, hudScale);
+            hud.drawHelp(12.0f, 12.0f, hudScale);
 
             const float statusHeight = tt::ui::Hud::lineHeight(hudScale) + 12.0f;
             hud.drawStatusLine(simulation, session.paused(), 12.0f,
@@ -631,7 +656,8 @@ int main(int argc, char** argv) {
             const std::vector<unsigned char> pixels = renderer.readPixels(width, height);
             std::string error;
             if (!tt::image::writeScreenshot(path, pixels, width, height, error)) {
-                std::fprintf(stderr, "error: screenshot failed: %s\n", error.c_str());
+                std::fprintf(stderr, text(language, Key::ErrorScreenshot), error.c_str());
+                std::fprintf(stderr, "\n");
                 if (options.screenshotMode) {
                     renderer.shutdown();
                     SDL_GL_DeleteContext(glContext);
@@ -640,7 +666,8 @@ int main(int argc, char** argv) {
                     return 1;
                 }
             } else {
-                std::printf("Wrote %s (%dx%d)\n", path.c_str(), width, height);
+                std::printf(text(language, Key::WroteScreenshot), path.c_str(), width, height);
+                std::printf("\n");
 
                 if (options.printAgents) {
                     std::printf("--- agent state at capture (t=%.2fs) ---\n", simulation.elapsed());

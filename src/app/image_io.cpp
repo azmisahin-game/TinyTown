@@ -1,6 +1,7 @@
 #include "app/image_io.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 

@@ -286,6 +286,13 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+    // We provide our own main() and define SDL_MAIN_HANDLED above, so SDL must
+    // be told that the application entry point is already handled. Without this
+    // call SDL_Init() fails on Windows, where SDL normally redirects the entry
+    // point through SDL2main.
+    // https://wiki.libsdl.org/SDL2/SDL_SetMainReady
+    SDL_SetMainReady();
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
         std::fprintf(stderr, "error: SDL_Init failed: %s\n", SDL_GetError());
         return 1;

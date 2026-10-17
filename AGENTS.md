@@ -90,3 +90,22 @@ Layout rules worth preserving:
 - `docs/media/tinytown-v0.1-town.png` must be regenerated with `--screenshot`
   whenever the look changes. Never add a hand-made or concept image.
 
+Windows build facts that cost real debugging time:
+
+- The official `SDL2-devel-<version>-VC.zip` extracts to a top-level folder named
+  `SDL2-<version>`, **not** `SDL2-<version>-VC`, and its CMake package config is
+  at `<root>/cmake/sdl2-config.cmake`, **not** `<root>/lib/cmake/SDL2`. Pass
+  `-DSDL2_DIR=<root>/cmake`.
+- `src/app/main.cpp` defines `SDL_MAIN_HANDLED` and supplies its own `main`, so it
+  must call `SDL_SetMainReady()` before `SDL_Init()`. Removing that call breaks
+  the Windows build at run time, not compile time.
+- `find_package(SDL2)` accepts any SDL2 it can find. The Windows CI job reads
+  `SDL2_DIR` back from `CMakeCache.txt` and fails if it is not the SDK the job
+  installed, so a job cannot pass while linking an unrelated SDL2.
+- Include what you use: MSVC does not supply `std::size` without `<iterator>` or
+  `std::ptrdiff_t` without `<cstddef>`, even though GCC does transitively.
+- PowerShell validation is possible without Windows: install PowerShell 7 for
+  Linux and parse-check or run the workflow scripts with
+  `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`.
+
+

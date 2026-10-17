@@ -1,0 +1,72 @@
+name: pages
+
+# Deploys the static project site in site/ to GitHub Pages on every push to
+# main, and on demand. The site is plain HTML, CSS and a little JavaScript:
+# there is no build step and no framework.
+#
+# Required one-time repository setting, which this workflow cannot change
+# itself: Settings -> Pages -> Build and deployment -> Source = GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# Least privilege: only what deploying to Pages needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment, and let a queued run replace an older one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify the site before deploying
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node for the site check
+        # Node is used only by tools/check_site.js. The published site does not
+        # depend on Node at runtime.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check the site
+        run: node tools/check_site.js
+
+      - name: Confirm the published files exist
+        run: |
+          set -euo pipefail
+          for file in site/index.html site/style.css site/app.js site/assets/tinytown-v0.1-town.png; do
+            if [[ ! -s "$file" ]]; then
+              echo "error: missing or empty site file: $file" >&2
+              exit 1
+            fi
+            echo "  ok  $file"
+          done
+
+      - name: Upload the site as a Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: verify
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -149,9 +149,37 @@ TEST(Localization, DecodesUtf8Correctly) {
     }
 }
 
+TEST(Localization, TurkishTextHasTheExpectedBytes) {
+    // Compares against explicit UTF-8 byte values rather than a source literal.
+    // If the compiler decoded the source in the wrong codepage (MSVC without
+    // /utf-8), both the table and a source literal would be wrong in the same
+    // way and a literal-to-literal check would still pass. Pinning the bytes
+    // catches that: "Görev" is G, 0xC3 0xB6 (o-umlaut), r, e, v.
+    const std::string turkish = localization::text(Language::Turkish, Key::Task);
+    const std::string expected = std::string("G") + "\xC3\xB6" + "rev";
+    CHECK_EQ(turkish, expected);
+
+    // "Tamamlandı" ends with dotless i: 0xC4 0xB1.
+    const std::string completed = localization::text(Language::Turkish, Key::Completed);
+    CHECK_MSG(completed.size() > 2, "completed label is unexpectedly short");
+    CHECK_EQ(completed.substr(completed.size() - 2), std::string("\xC4\xB1"));
+
+    // "İnceleme" starts with dotted capital I: 0xC4 0xB0.
+    const std::string survey = localization::text(Language::Turkish, Key::Survey);
+    CHECK_MSG(survey.size() > 2, "survey label is unexpectedly short");
+    CHECK_EQ(survey.substr(0, 2), std::string("\xC4\xB0"));
+
+    // "Başarısız" contains s-cedilla (0xC5 0x9F) and dotless i (0xC4 0xB1).
+    const std::string failed = localization::text(Language::Turkish, Key::Failed);
+    CHECK_MSG(failed.find("\xC5\x9F") != std::string::npos,
+              "failed label is missing s-cedilla");
+}
+
 TEST(Localization, DecodesMultiByteTurkishText) {
-    // "Görev" in UTF-8: G, o-umlaut (2 bytes), r, e, v.
-    const std::string text = "G\u00f6rev";
+    // "Görev" in UTF-8: G, then o-umlaut as the two bytes 0xC3 0xB6, then r, e,
+    // v. Written as bytes so the test does not depend on how a compiler decodes
+    // universal character names.
+    const std::string text = "G\xC3\xB6rev";
     const std::vector<uint32_t> decoded = localization::decodeUtf8All(text);
     CHECK_EQ(decoded.size(), static_cast<size_t>(5));
     CHECK_EQ(decoded[0], static_cast<uint32_t>('G'));
@@ -212,7 +240,9 @@ TEST(Localization, TurkishCaseFoldingIsLanguageAware) {
 
 TEST(Localization, FoldForDisplayProducesDrawableText) {
     // "İnceleme" folds to "İNCELEME": dotted capital I first, then ASCII.
-    const std::string folded = localization::foldForDisplay(Language::Turkish, "\u0130nceleme");
+    // Written as bytes: 0xC4 0xB0 is dotted capital I.
+    const std::string folded =
+        localization::foldForDisplay(Language::Turkish, "\xC4\xB0nceleme");
     const std::vector<uint32_t> codepoints = localization::decodeUtf8All(folded);
     CHECK_EQ(codepoints[0], static_cast<uint32_t>(0x0130));
     CHECK_EQ(codepoints[1], static_cast<uint32_t>('N'));
@@ -259,9 +289,10 @@ TEST(Localization, TurkishStringsActuallyUseTurkishCharacters) {
 }
 
 TEST(Localization, MissingGlyphsDetectsUnknownCharacters) {
-    // A snowman has no glyph, so it must be reported.
+    // A snowman (U+2603, UTF-8 bytes 0xE2 0x98 0x83) has no glyph, so it must
+    // be reported. Written as bytes to avoid universal character names.
     const std::vector<uint32_t> missing =
-        localization::missingGlyphs(Language::English, "ok \u2603");
+        localization::missingGlyphs(Language::English, "ok \xE2\x98\x83");
     CHECK_EQ(missing.size(), static_cast<size_t>(1));
     if (!missing.empty()) {
         CHECK_EQ(missing[0], static_cast<uint32_t>(0x2603));

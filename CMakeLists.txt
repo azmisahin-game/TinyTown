@@ -37,11 +37,22 @@ add_library(tinytown_core STATIC
 target_include_directories(tinytown_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_compile_features(tinytown_core PUBLIC cxx_std_20)
 
+# Sources contain UTF-8 string literals (Turkish interface text). Without /utf-8
+# MSVC decodes them in the system codepage, which turns Turkish characters into
+# mojibake and breaks \u escapes in tests. This must apply to every target that
+# compiles a source file with non-ASCII text.
+function(tinytown_enable_utf8 target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /utf-8)
+    endif()
+endfunction()
+
 if(MSVC)
     target_compile_options(tinytown_core PRIVATE /W4)
 else()
     target_compile_options(tinytown_core PRIVATE -Wall -Wextra)
 endif()
+tinytown_enable_utf8(tinytown_core)
 
 # ---------------------------------------------------------------------------
 # Interactive application: SDL2 window + legacy OpenGL renderer.
@@ -86,6 +97,7 @@ if(TINYTOWN_BUILD_APP)
     else()
         target_compile_options(tinytown PRIVATE -Wall -Wextra)
     endif()
+    tinytown_enable_utf8(tinytown)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -112,6 +124,7 @@ if(TINYTOWN_BUILD_TESTS)
     else()
         target_compile_options(tinytown_tests PRIVATE -Wall -Wextra)
     endif()
+    tinytown_enable_utf8(tinytown_tests)
 
     add_test(NAME tinytown_core_tests COMMAND tinytown_tests)
 endif()

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TinyTown — kodla üretilen küçük bir dünya</title>
+<meta name="description" content="TinyTown, C++ ile kodla üretilen küçük prosedürel bir 3B şehir ve bu şehirde basit görevler yapan görünür ajanlardan oluşur. Oyun motoru yok, zorunlu yapay zekâ modeli yok.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main" data-i18n="skip">İçeriğe geç</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">TinyTown</span>
+    </a>
+    <nav class="site-nav" aria-label="Ana gezinme">
+      <a href="#about" data-i18n="nav.about">Nedir</a>
+      <a href="#play" data-i18n="nav.play">Nasıl oynanır</a>
+      <a href="#agents" data-i18n="nav.agents">Ajanlar</a>
+      <a href="#download" data-i18n="nav.download">İndir</a>
+      <a href="#roadmap" data-i18n="nav.roadmap">Yol haritası</a>
+    </nav>
+    <div class="lang-switch" role="group" aria-label="Dil / Language">
+      <button type="button" class="lang-btn is-active" data-lang="tr" aria-pressed="true">TR</button>
+      <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="hero.eyebrow">C++ · SDL2 · OpenGL · oyun motoru yok</p>
+      <h1 data-i18n="hero.title">Kodla üretilen küçük bir dünya</h1>
+      <p class="lead" data-i18n="hero.lead">
+        TinyTown, prosedürel olarak üretilen küçük bir 3B şehir ve bu şehirde
+        basit görevler yapan görünür ajanlardan oluşur. Harici görsel varlık,
+        oyun motoru veya zorunlu yapay zekâ modeli kullanmaz.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#download" data-i18n="hero.cta">İndir</a>
+        <a class="btn btn-ghost" href="https://github.com/azmisahin-game/TinyTown" data-i18n="hero.source">Kaynak kodu</a>
+      </div>
+      <figure class="shot">
+        <img src="assets/tinytown-v0.1-town.png"
+             alt="TinyTown v0.1 çalışırken: şehir, üç ajan ve inceleme paneli"
+             data-i18n-alt="shot.alt" width="1280" height="720">
+        <figcaption data-i18n="shot.caption">
+          Uygulamanın kendisi tarafından üretilmiş gerçek ekran görüntüsü.
+          Tasarım görseli değildir.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="wrap">
+      <h2 data-i18n="about.title">TinyTown nedir</h2>
+      <p data-i18n="about.p1">
+        TinyTown, küçük ama gerçek bir ürünün ne kadarını doğrudan kodla, az ve
+        gerekçeli bağımlılıkla yapabileceğimizi gösteren küçük bir açık kaynak
+        deneyidir. Şehirdeki her şekil, her renk ve yazı tipi kodla üretilir.
+      </p>
+      <p data-i18n="about.p2">
+        Proje tek bir Win32/OpenGL dosyası olarak başladı. O dosya
+        <code>reference/win32-minicity/main.cpp</code> yolunda tarih olarak
+        saklanır; Windows'a özel olduğu için Linux veya macOS'ta olduğu gibi
+        derlenemez. TinyTown onun amacını korur ve taşınabilir bir kabuk
+        üzerine yeniden kurar.
+      </p>
+      <ul class="facts">
+        <li data-i18n="about.fact1"><strong>Tek bağımlılık:</strong> pencere, girdi ve OpenGL bağlamı için SDL2 2.32.4.</li>
+        <li data-i18n="about.fact2"><strong>Çevrimdışı:</strong> derleme sonrası ağ bağlantısı, hesap veya API anahtarı gerekmez.</li>
+        <li data-i18n="about.fact3"><strong>Deterministik:</strong> aynı tohum her zaman aynı şehri ve aynı ajan davranışını üretir.</li>
+        <li data-i18n="about.fact4"><strong>Test edilebilir çekirdek:</strong> simülasyon, pencere açmadan 77 testle doğrulanır.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="play">
+    <div class="wrap">
+      <h2 data-i18n="play.title">Nasıl oynanır</h2>
+      <p data-i18n="play.intro">
+        Uygulamayı açın, şehirde gezin, ajanları izleyin ve birini seçip ne
+        yaptığını okuyun.
+      </p>
+      <div class="keys">
+        <div class="key-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span data-i18n="keys.move">Hareket</span></div>
+        <div class="key-row"><kbd>Shift</kbd><span data-i18n="keys.sprint">Hızlı koş</span></div>
+        <div class="key-row"><kbd>M</kbd><span data-i18n="keys.mouse">İmleci al / bırak, sonra fare ile bak</span></div>
+        <div class="key-row"><kbd>V</kbd><span data-i18n="keys.view">Genel / sokak görünümü</span></div>
+        <div class="key-row"><kbd>Tab</kbd><kbd>1</kbd>–<kbd>9</kbd><span data-i18n="keys.select">Ajan seç</span></div>
+        <div class="key-row"><kbd>P</kbd><span data-i18n="keys.pause">Duraklat / devam</span></div>
+        <div class="key-row"><kbd>R</kbd><span data-i18n="keys.reset">Dünyayı tohuma sıfırla</span></div>
+        <div class="key-row"><kbd>L</kbd><span data-i18n="keys.lang">Dili değiştir (TR / EN)</span></div>
+        <div class="key-row"><kbd>F2</kbd><span data-i18n="keys.shot">Ekran görüntüsü kaydet</span></div>
+        <div class="key-row"><kbd>H</kbd><span data-i18n="keys.help">Yardım katmanı</span></div>
+        <div class="key-row"><kbd>Esc</kbd><span data-i18n="keys.quit">İmleci bırak, tekrar basınca çık</span></div>
+      </div>
+      <p class="note" data-i18n="play.note">
+        Fare ile bakış isteğe bağlıdır. İmleç kilitlenmez; <kbd>M</kbd> ile
+        açılıp kapanır ve <kbd>Esc</kbd> her zaman serbest bırakır.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="agents">
+    <div class="wrap">
+      <h2 data-i18n="agents.title">Üç deterministik ajan</h2>
+      <p data-i18n="agents.intro">
+        Ajanlar belirlenmiş kurallarla çalışan görev durum makineleridir. Karar
+        vermek için bir dil modeli kullanmazlar. Durumlar:
+        Bekliyor → Hedefe gidiyor → Görevde → Tamamlandı veya Başarısız.
+      </p>
+      <div class="cards">
+        <article class="card">
+          <h3 data-i18n="agents.patrol.title">Devriye</h3>
+          <p data-i18n="agents.patrol.body">
+            Kaldırım köşelerinden oluşan bir döngüde yürür ve turu tekrarlar.
+          </p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="agents.deliver.title">Teslimat</h3>
+          <p data-i18n="agents.deliver.body">
+            Depodan paket alır, bir dükkânın önüne götürür ve depoya döner.
+            Taşınan paket ajanın üstünde çizilir.
+          </p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="agents.survey.title">İnceleme</h3>
+          <p data-i18n="agents.survey.body">
+            Bir noktaya gider, orada kısa süre çalışır ve sonucu panele yazar.
+          </p>
+        </article>
+      </div>
+      <p class="note" data-i18n="agents.note">
+        Yol bulma, binaların içinden geçmez. Ulaşılamayan hedefte ajan uydurmak
+        yerine "yol yok" diye açıkça başarısız olur ve yeni görev alır.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="download">
+    <div class="wrap">
+      <h2 data-i18n="download.title">İndir</h2>
+      <p data-i18n="download.intro">
+        Kaynak kodu derlemeniz gerekmez. Paketler GitHub Release üzerinden
+        yayımlanır.
+      </p>
+      <div class="download-grid">
+        <div class="download-card">
+          <h3>Windows x64</h3>
+          <p class="file" data-i18n="download.win.file">TinyTown-v0.1.0-windows-x64.zip</p>
+          <p data-i18n="download.win.body">
+            ZIP'i çıkarın ve <code>tinytown.exe</code> dosyasına çift tıklayın.
+            SDL2 kütüphanesi paketin içindedir.
+          </p>
+        </div>
+        <div class="download-card">
+          <h3>Linux x64</h3>
+          <p class="file" data-i18n="download.linux.file">TinyTown-v0.1.0-linux-x64.tar.gz</p>
+          <p data-i18n="download.linux.body">
+            Arşivi çıkarıp <code>./tinytown</code> çalıştırın. SDL2 ve OpenGL
+            sistem bağımlılığıdır, pakette gelmez.
+          </p>
+        </div>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/azmisahin-game/TinyTown/releases/latest" data-i18n="download.cta">
+          GitHub Release sayfası
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/azmisahin-game/TinyTown" data-i18n="download.source">
+          Kaynak kodu ve testler
+        </a>
+      </div>
+      <p class="note" data-i18n="download.note">
+        İndirme, bilgisayarınızdaki kurulu bir kopyayı otomatik güncellemez.
+        Otomatik güncelleme bu sürümde yoktur.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="honest">
+    <div class="wrap">
+      <h2 data-i18n="honest.title">Bu sürüm ne yapmaz</h2>
+      <p data-i18n="honest.intro">
+        Yanlış beklenti oluşturmamak için açıkça yazıyoruz. Aşağıdakiler
+        v0.1.0 kapsamında yoktur:
+      </p>
+      <ul class="honest-list">
+        <li data-i18n="honest.li1">LLM, öğrenen yapay zekâ, TTS veya yapay zekâ görüntü üretimi.</li>
+        <li data-i18n="honest.li2">Ses, WAV dışa aktarımı, MP4 veya animasyon karesi dizisi.</li>
+        <li data-i18n="honest.li3">Tarayıcı / WebAssembly sürümü.</li>
+        <li data-i18n="honest.li4">Otomatik güncelleme.</li>
+      </ul>
+      <p class="note" data-i18n="honest.browser">
+        Uygulama yerel bir SDL2 penceresi ve compatibility-profile
+        immediate-mode OpenGL kullanır. Bu hâliyle tarayıcıda çalışmaz;
+        tarayıcı hedefi ayrı bir kilometre taşıdır ve gerçek bir WebGL/GLES
+        renderer ile Emscripten derlemesi gerektirir.
+      </p>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="status">
+    <div class="wrap">
+      <h2 data-i18n="status.title">Durum</h2>
+      <div class="table-scroll">
+        <table class="status-table">
+          <caption class="visually-hidden" data-i18n="status.caption">Platform doğrulama durumu</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="status.th.platform">Platform</th>
+              <th scope="col" data-i18n="status.th.build">Derleme</th>
+              <th scope="col" data-i18n="status.th.tests">Testler</th>
+              <th scope="col" data-i18n="status.th.gui">Arayüz açıldı</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Linux (GCC)</th>
+              <td data-i18n="status.yes">Evet</td>
+              <td data-i18n="status.tests77">77 / 77</td>
+              <td data-i18n="status.linuxGui">Evet, Xvfb + Mesa ile</td>
+            </tr>
+            <tr>
+              <th scope="row">Windows (MSVC 2022)</th>
+              <td data-i18n="status.yes">Evet</td>
+              <td data-i18n="status.tests77">77 / 77</td>
+              <td data-i18n="status.winGui">Hayır, runner'da ekran yok</td>
+            </tr>
+            <tr>
+              <th scope="row">macOS</th>
+              <td data-i18n="status.no">Hayır</td>
+              <td data-i18n="status.no">Hayır</td>
+              <td data-i18n="status.no">Hayır</td>
+            </tr>
+            <tr>
+              <th scope="row" data-i18n="status.browser">Tarayıcı</th>
+              <td data-i18n="status.no">Hayır</td>
+              <td data-i18n="status.no">Hayır</td>
+              <td data-i18n="status.no">Hayır</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" data-i18n="status.note">
+        Windows'ta uygulama derlenir ve testler geçer, ancak etkileşimli
+        pencere ve OpenGL çizimi CI runner'ında denenmedi. Bu, gerçek masaüstü
+        denemesinin yerini tutmaz.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="roadmap">
+    <div class="wrap">
+      <h2 data-i18n="roadmap.title">Yol haritası</h2>
+      <p data-i18n="roadmap.intro">
+        Sonraki adımlar ayrı ve ölçülebilir görevlerdir. Hiçbiri v0.1.0'ın
+        parçası değildir ve tamamlanmış gibi gösterilmez.
+      </p>
+      <div class="timeline">
+        <article class="timeline-item is-current">
+          <h3 data-i18n="roadmap.v010.title">v0.1.0 — Yaşayan dünya ve yayımlanabilir temel</h3>
+          <p data-i18n="roadmap.v010.body">
+            Tamamlandı: prosedürel şehir, gezilebilir kamera, üç deterministik
+            ajan, Türkçe/İngilizce arayüz, testler, paketler, Release ve bu site.
+          </p>
+        </article>
+        <article class="timeline-item">
+          <h3 data-i18n="roadmap.v020.title">v0.2 — Üretim ve paylaşılabilir medya çıktıları</h3>
+          <p data-i18n="roadmap.v020.body">
+            Planlandı, henüz başlamadı: deterministik animasyon karesi dizisi,
+            kodla sentezlenen ortam sesi ve ses düzeyi kontrolü, WAV dışa
+            aktarımı, isteğe bağlı FFmpeg ile MP4.
+          </p>
+        </article>
+        <article class="timeline-item">
+          <h3 data-i18n="roadmap.v030.title">v0.3 — Daha geniş erişim ve tarayıcı değerlendirmesi</h3>
+          <p data-i18n="roadmap.v030.body">
+            Planlandı, henüz başlamadı: yerel Windows/Linux paketlerinin yeniden
+            doğrulanması, WebGL/GLES uyumlu renderer fizibilitesi ve çalışan bir
+            tarayıcı prototipi. Çalışan bir prototip yayımlanmadan "tarayıcı
+            sürümü var" denmeyecek.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p data-i18n="footer.license">
+      TinyTown, MIT lisansı ile yayımlanır. SDL2 (zlib lisansı) tek harici
+      bağımlılıktır.
+    </p>
+    <p>
+      <a href="https://github.com/azmisahin-game/TinyTown" data-i18n="footer.repo">Depo</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/azmisahin-game/TinyTown/blob/main/THIRD-PARTY-NOTICES.md" data-i18n="footer.notices">Üçüncü taraf bildirimleri</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/azmisahin-game/TinyTown/blob/main/docs/ROADMAP.md" data-i18n="footer.roadmap">Yol haritası</a>
+    </p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -33,3 +33,6 @@ Thumbs.db
 *.ppm
 *.wav
 *.mp4
+
+# Local packaging output
+/dist/

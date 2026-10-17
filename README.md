@@ -1,55 +1,73 @@
 # TinyTown
 
-**A tiny world built from code.**
-*Küçük bir dünya; oyun motoru olmadan, kodla üretilir.*
+**Kodla üretilen küçük bir dünya.**
+*A tiny world built from code.*
 
-TinyTown is a small open-source C++ experiment: a procedural 3D mini town, a
-handful of visible agents doing simple deterministic work inside it, and a plain
-overlay that shows what each agent is doing. It builds and runs without a game
-engine, without a scripting runtime, and without any AI model or network access.
+TinyTown, C++ ile kodla üretilen küçük bir prosedürel 3B şehir ve bu şehirde
+basit görevler yapan görünür ajanlardan oluşan küçük bir açık kaynak
+deneyidir. Oyun motoru, zorunlu yapay zekâ modeli, API anahtarı veya hesap
+gerektirmez.
 
-![TinyTown v0.1 running with three agents and the inspect overlay](docs/media/tinytown-v0.1-town.png)
+**English:** [README.en.md](README.en.md)
 
-*Screenshot produced by the application itself
-(`--screenshot docs/media/tinytown-v0.1-town.png`), not a concept image.*
+![TinyTown v0.1 çalışırken: şehir, üç ajan ve inceleme paneli](docs/media/tinytown-v0.1-town.png)
 
-## Status: v0.1 is implemented and runnable
+*Ekran görüntüsü uygulamanın kendisi tarafından üretildi
+(`--screenshot`), tasarım görseli değildir.*
 
-Everything below was built and executed on Linux in this repository. Windows is
-covered by CI compilation and a headless test run; see
-[Platform support](#platform-support).
+## Durum: v0.1.0 yayımlanabilir
 
-| Capability | State |
+Bu sürümde ne olduğunu ve ne olmadığını açıkça yazıyoruz.
+
+| Yetenek | Durum |
 | --- | --- |
-| CMake build (C++20, SDL2 + OpenGL) | Working |
-| Procedural town from a seed | Working |
-| First-person camera with collision and bounds | Working |
-| 3+ agents with patrol / delivery / survey tasks | Working |
-| Grid pathfinding that avoids buildings | Working |
-| Agent inspect panel, agent list, help overlay, status line | Working |
-| Pause, resume, reset world, reset one agent | Working |
-| Headless simulation tests | 56 passing |
-| Offscreen screenshot (`--screenshot`) | Working |
-| Windows CI (MSVC) build + tests | Passing in CI (56/56 tests) |
-| Audio, image/video export, AI adapters | **Not implemented** (later milestones) |
+| CMake ile derleme (C++20, SDL2 + OpenGL) | Çalışıyor |
+| Tohumdan prosedürel şehir | Çalışıyor |
+| Gezilebilir kamera, çarpışma, dünya sınırları | Çalışıyor |
+| Devriye / Teslimat / İnceleme yapan en az üç ajan | Çalışıyor |
+| Binalardan geçmeyen ızgara yol bulma | Çalışıyor |
+| Türkçe varsayılan arayüz + İngilizce seçeneği | Çalışıyor |
+| Ajan inceleme paneli, ajan listesi, yardım katmanı | Çalışıyor |
+| Duraklat, devam, dünyayı sıfırla, tek ajanı sıfırla | Çalışıyor |
+| Penceresiz (headless) simülasyon testleri | 77 test geçiyor |
+| Etkileşimsiz ekran görüntüsü (`--screenshot`) | Çalışıyor |
+| Windows ve Linux indirilebilir paketleri | Çalışıyor |
+| Ses, görüntü/video dışa aktarma, yapay zekâ | **Yok** (sonraki sürümler) |
 
-## Build
+## İndirme
 
-Requirements:
+Kaynak kodu derlemeniz gerekmez:
 
-- CMake 3.16 or newer
-- A C++20 compiler (tested with GCC 14; CI also targets MSVC 2022)
-- SDL2 development files, version 2.32.x (zlib licence)
-- An OpenGL development library
-- Optional: zlib, for PNG screenshots. Without it, screenshots are written as PPM.
+- **Windows x64:** `TinyTown-v0.1.0-windows-x64.zip` — arşivi çıkarın ve
+  `tinytown.exe` dosyasına çift tıklayın. SDL2 kütüphanesi paketin içindedir.
+- **Linux x64:** `TinyTown-v0.1.0-linux-x64.tar.gz` — arşivi çıkarıp
+  `./tinytown` çalıştırın.
 
-The build is verified against **SDL2 2.32.4**. SDL2 is the single external
-dependency, and it is used only for the window, input, and OpenGL context.
-Simulation, world generation, and pathfinding are plain C++ with no platform
-headers; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for why that line is
-drawn where it is.
+Paketler
+[GitHub Releases](https://github.com/azmisahin-game/TinyTown/releases/latest)
+sayfasında yayımlanır.
 
-### Linux (verified)
+Linux paketi SDL2 ve OpenGL kütüphanelerini **içermez**; bunlar sistem
+bağımlılığıdır:
+
+```bash
+sudo apt-get install -y libsdl2-2.0-0 libgl1     # Debian/Ubuntu
+sudo dnf install -y SDL2 mesa-libGL              # Fedora
+sudo pacman -S sdl2 mesa                         # Arch
+```
+
+Her iki pakette de `QUICKSTART_TR.txt`, `QUICKSTART_EN.txt`, `LICENSE`,
+`THIRD-PARTY-NOTICES.md` ve `RUNTIME-REQUIREMENTS.txt` bulunur.
+
+## Kaynaktan derleme
+
+Gereksinimler:
+
+- CMake 3.16 veya üzeri
+- C++20 derleyicisi (GCC 14 ve MSVC 2022 ile doğrulandı)
+- SDL2 geliştirme dosyaları, sürüm 2.32.x (zlib lisansı)
+- OpenGL geliştirme kütüphanesi
+- İsteğe bağlı: zlib. Varsa ekran görüntüleri PNG yazılır, yoksa PPM.
 
 ```bash
 # Debian/Ubuntu
@@ -61,15 +79,14 @@ ctest --test-dir build --output-on-failure
 ./build/tinytown
 ```
 
-### Windows (build instructions)
+### Windows'ta derleme
 
-CI uses the official SDL2 development archive. The same steps work locally in a
-Developer Command Prompt. The archive's top-level folder is `SDL2-<version>`
-(not `SDL2-<version>-VC`), and its CMake package config lives in
-`<root>\cmake\sdl2-config.cmake`:
+CI, resmî SDL2 geliştirme arşivini kullanır. Arşivin üst klasörü
+`SDL2-<sürüm>` adındadır (`SDL2-<sürüm>-VC` değil) ve CMake paket dosyası
+`<kök>\cmake\sdl2-config.cmake` yolundadır:
 
 ```powershell
-# Download and extract the SDL2-devel-2.32.4-VC.zip release to C:\SDL2
+# SDL2-devel-2.32.4-VC.zip arşivini C:\SDL2 klasörüne çıkarın
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
       -DSDL2_DIR="C:\SDL2\cmake"
 cmake --build build --config Release --parallel
@@ -78,15 +95,14 @@ copy C:\SDL2\lib\x64\SDL2.dll build\Release\
 .\build\Release\tinytown.exe
 ```
 
-### Build options
+### Derleme seçenekleri
 
-| Option | Default | Effect |
+| Seçenek | Varsayılan | Etkisi |
 | --- | --- | --- |
-| `TINYTOWN_BUILD_APP` | `ON` | Build the interactive SDL2 application |
-| `TINYTOWN_BUILD_TESTS` | `ON` | Build the headless test binary |
+| `TINYTOWN_BUILD_APP` | `ON` | Etkileşimli SDL2 uygulamasını derler |
+| `TINYTOWN_BUILD_TESTS` | `ON` | Penceresiz test ikilisini derler |
 
-The tests have no SDL, OpenGL, or window dependency, so they run on any build
-machine:
+Testler SDL, OpenGL veya pencere gerektirmez; her derleme makinesinde çalışır:
 
 ```bash
 cmake -S . -B build -DTINYTOWN_BUILD_APP=OFF
@@ -94,68 +110,81 @@ cmake --build build --parallel
 ./build/tinytown_tests
 ```
 
-## Run
+## Çalıştırma
 
 ```bash
-./build/tinytown                 # default seed 1337, three agents
+./build/tinytown                 # varsayılan tohum 1337, üç ajan
 ./build/tinytown --seed 42 --agents 5
+./build/tinytown --lang en       # arayüzü İngilizce başlat
 ```
 
-### Controls
+### Kontroller
 
-| Input | Action |
+| Girdi | İşlev |
 | --- | --- |
-| `W` `A` `S` `D` or arrow keys | Move |
-| `Shift` | Sprint |
-| Mouse | Look (only after pressing `M`) |
-| `M` | Toggle mouse capture |
-| `Tab` or `1`–`9` | Select the next agent / a specific agent |
-| Left click | Select the agent under the cursor |
-| `P` or `Space` | Pause / resume the simulation |
-| `R` | Reset the world and all agents to the current seed |
-| `N` | Reset only the selected agent |
-| `V` | Toggle overview camera / street camera |
-| `H` or `F1` | Toggle the help overlay |
-| `F2` | Save a screenshot to `captures/` |
-| `Esc` | Release the mouse; press again to quit |
+| `W` `A` `S` `D` veya ok tuşları | Hareket |
+| `Shift` | Hızlı koş |
+| Fare | Bakış (önce `M` ile imleci alın) |
+| `M` | İmleci al / bırak |
+| `V` | Genel / sokak görünümü |
+| `Tab` veya `1`–`9` | Ajan seç |
+| Sol tık | İmlecin altındaki ajanı seç |
+| `P` veya Boşluk | Duraklat / devam |
+| `R` | Dünyayı tohuma sıfırla |
+| `N` | Yalnızca seçili ajanı sıfırla |
+| `L` | Arayüz dilini değiştir (TR / EN) |
+| `H` veya `F1` | Yardım katmanını aç / kapa |
+| `F2` | `captures/` içine ekran görüntüsü kaydet |
+| `Esc` | İmleci bırak; bırakılmışken tekrar basınca çık |
 
-Mouse look is opt-in. The cursor is never warped and never trapped, and losing
-focus clears all held keys and the mouse capture.
+Fare ile bakış isteğe bağlıdır. İmleç asla kilitlenmez ve odak kaybında tüm
+basılı tuşlarla birlikte serbest bırakılır.
 
-### Command-line options
+### Dil değiştirme
+
+Arayüz varsayılan olarak **Türkçedir**. İki yol vardır:
+
+1. Uygulama içinde `L` tuşuna basın. Anında değişir.
+2. Başlangıçta seçin: `--lang en` veya `--lang tr`.
+
+Türkçe karakterler (ç, ğ, ı, İ, ö, ş, ü) için bit eşlem yazı tipine glifler
+eklendi. Metin UTF-8'den kod noktalarına çözülür; bayt bayt çizilmez. Türkçe
+büyük harf katlama İngilizceden farklıdır: `i` harfi noktalı büyük `İ` olur,
+noktasız `ı` harfi `I` olur.
+
+### Komut satırı seçenekleri
 
 ```text
---seed <n>                 world seed (default 1337)
---agents <n>               number of agents (default 3)
---width <px> --height <px> window size (default 1280x720)
---screenshot <path>        render, write an image, and exit (no interaction)
---screenshot-seconds <s>   simulated seconds before the capture (default 3)
---yaw <radians>            initial camera yaw
---pitch <radians>          initial camera pitch
---camera <x> <z>           initial camera ground position
---eye <metres>             initial eye height; a high value starts overview mode
---print-agents             print agent task/state/target after a capture
---help                     show usage
+--seed <n>                 dünya tohumu (varsayılan 1337)
+--agents <n>               ajan sayısı (varsayılan 3)
+--width <px> --height <px> pencere boyutu (varsayılan 1280x720)
+--screenshot <yol>         etkileşimsiz çalış, görüntü yaz ve çık
+--screenshot-seconds <s>   yakalamadan önce geçen simülasyon saniyesi (3)
+--yaw <radyan>             başlangıç kamera yönü
+--pitch <radyan>           başlangıç kamera eğimi
+--camera <x> <z>           başlangıç kamera konumu
+--eye <metre>              başlangıç göz yüksekliği (büyük değer genel görünüm)
+--lang <tr|en>             arayüz dili (varsayılan tr)
+--print-agents             yakalamadan sonra ajan durumunu yazdır
+--help                     bu mesajı göster
 ```
 
-## What the agents actually do
+## Ajanlar gerçekte ne yapar
 
-Each agent runs one of three deterministic behaviours, and the panel reports the
-truthful current state:
+Her ajan üç davranıştan birini çalıştırır ve panel gerçek durumu gösterir:
 
-- **Patrol** — walks a loop of sidewalk corners.
-- **Deliver** — picks up a package at the Depot, carries it to a storefront, and
-  returns. The carried package is drawn above the agent, so the panel and the
-  world never disagree.
-- **Survey** — travels to a landmark and inspects it.
+- **Devriye** — kaldırım köşelerinden oluşan bir döngüde yürür.
+- **Teslimat** — depodan paket alır, bir dükkânın önüne götürür ve döner.
+  Taşınan paket ajanın üstünde çizilir, yani panel ile dünya çelişmez.
+- **İnceleme** — bir noktaya gider ve orayı inceler.
 
-States are `Idle → Navigating → Working → Completed` or `Failed`. A completed or
-failed result stays on screen for a moment before the next task starts, so the
-panel shows what actually happened. "No route" and "unknown target" are normal,
-explicit outcomes: the agent records the reason, counts a failure, and picks up
-its next task instead of walking through a building.
+Durumlar: `Bekliyor → Hedefe gidiyor → Görevde → Tamamlandı` veya
+`Başarısız`. Tamamlanan ya da başarısız sonuç kısa süre ekranda kalır, sonra
+ajan yeni görev alır. "Yol yok" ve "bilinmeyen hedef" olağan sonuçlardır: ajan
+binanın içinden geçmek yerine nedeni kaydeder, başarısızlık sayacını artırır
+ve yeni göreve geçer.
 
-Verify the whole thing without a window:
+Tüm bunları pencere açmadan doğrulayabilirsiniz:
 
 ```bash
 ./build/tinytown --screenshot /tmp/town.png --screenshot-seconds 14 \
@@ -170,98 +199,137 @@ Wrote /tmp/town.png (1280x720)
   #2 Ceren  task=Survey   state=Working    target=Park Plaza     at=(-11.7, -11.7) done=1 failed=0 carry=nothing
 ```
 
-## Tests
+> Not: `--print-agents` çıktısı geliştirici günlüğüdür ve İngilizce kalır.
+> Kullanıcıya gösterilen arayüz iki dillidir.
+
+## Testler
 
 ```bash
 ./build/tinytown_tests
 ```
 
-The suite covers deterministic seeded world generation, pathfinding (reachable,
-unreachable, blocked start/goal, out-of-bounds, detour around a wall, and
-determinism), agent state transitions, large and negative `dt` handling, camera
-frame-rate independence and bounds, session pause/selection/frame-clamping, and
-the HUD bitmap font.
+Test paketi; deterministik tohumla üretimi, yol bulmayı (ulaşılabilir,
+ulaşılamaz, engelli başlangıç/hedef, sınır dışı, duvar etrafından dolaşma,
+determinizm), ajan durum geçişlerini, büyük ve negatif `dt` davranışını,
+kamera çerçeve hızı bağımsızlığını, oturum duraklatma/seçim/zaman kırpmayı,
+yazı tipi kapsamını ve yerelleştirmeyi kapsar.
 
-See [docs/QUALITY-GATES.md](docs/QUALITY-GATES.md) for the full acceptance list
-and the last recorded results.
+En güçlü kontrol şudur: her kullanıcı arayüzü metni, her iki dilde, yazı
+tipinin çizebildiği karakterlerden oluştuğu doğrulanır. Bu, Türkçe metnin
+sessizce bozuk karakterlere dönüşmesini engeller.
 
-## Platform support
+Tam kabul listesi ve son kaydedilen sonuçlar için
+[docs/QUALITY-GATES.md](docs/QUALITY-GATES.md) dosyasına bakın.
 
-| Platform | Configured | Compiled | Tests run | Application launched |
+## Platform desteği
+
+| Platform | Yapılandırma | Derleme | Testler | Arayüz açıldı |
 | --- | --- | --- | --- | --- |
-| Linux (GCC 13/14) | Yes | Yes | Yes — 56 passing | Yes, under Xvfb with Mesa llvmpipe |
-| Windows (MSVC 2022) | Yes (CI) | Yes (CI) | Yes (CI) — 56 passing | **No** |
+| Linux (GCC 14, Debian 13) | Evet | Evet | Evet — 77 test | Evet, Xvfb + Mesa llvmpipe |
+| Windows (MSVC 2022) | Evet (CI) | Evet (CI) | Evet (CI) — 77 test | **Hayır** |
+| macOS | Hayır | Hayır | Hayır | Hayır |
 
-"Launched under Xvfb with Mesa llvmpipe" means the real binary created a real
-OpenGL context, rendered frames, and wrote a real PNG. It is not a claim that a
-human clicked through the interface on a desktop.
+"Xvfb + Mesa llvmpipe ile açıldı" şu demektir: gerçek ikili dosya gerçek bir
+OpenGL bağlamı oluşturdu, kareleri çizdi ve gerçek bir PNG yazdı. Bu, bir
+insanın masaüstünde arayüzü tıklayarak kullandığı iddiası **değildir**.
 
-Windows is compiled and tested by CI on a GitHub-hosted runner (run
-[39009303637](https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637),
-56/56 tests, zero warnings). That runner has no usable display or GPU, so the
-interactive GUI and its OpenGL rendering have **not** been exercised on Windows;
-the CI job only starts the executable with `--help` to check process start-up,
-argument parsing and exit codes. macOS has not been configured or compiled at
-all.
+Windows'ta uygulama CI'da derlenir ve testler geçer, ancak GitHub runner'ında
+kullanılabilir ekran veya GPU yoktur. Bu yüzden etkileşimli pencere ve OpenGL
+çizimi Windows'ta **denenmedi**; CI yalnızca `tinytown.exe --help` ile süreç
+başlangıcını, argüman ayrıştırmayı ve çıkış kodunu kontrol eder.
 
-## Not implemented in v0.1
+## v0.1.0 kapsamında olmayanlar
 
-To be explicit, so the README never overstates the project:
+Projeyi olduğundan fazla göstermemek için açıkça yazıyoruz:
 
-- No audio, no image or video export, no MP4.
-- No LLM, no TTS, no AI image model, no API keys, no network access.
-- No in-app editor, scripting language, plugin system, or WebAssembly build.
+- Ses, WAV dışa aktarımı, MP4 veya animasyon karesi dizisi yoktur.
+- LLM, öğrenen yapay zekâ, TTS, yapay zekâ görüntü üretimi yoktur. API
+  anahtarı, ağ bağlantısı veya model indirmesi gerekmez.
+- Tarayıcı / WebAssembly sürümü yoktur. Uygulama yerel bir SDL2 penceresi ve
+  compatibility-profile immediate-mode OpenGL kullanır; bu hâliyle tarayıcıda
+  çalışmaz.
+- Uygulama içi düzenleyici, betik dili, eklenti sistemi yoktur.
+- Otomatik güncelleme yoktur. Release indirmek, kurulu bir kopyayı güncellemez.
 
-These are separate later milestones, described in
-[docs/ROADMAP.md](docs/ROADMAP.md).
+Ajanlar belirlenmiş kurallarla çalışan simülasyon ajanlarıdır. Karar vermek
+için bir dil modeli kullanmazlar.
 
-## Dependencies and licences
+## Bağımlılıklar ve lisanslar
 
-| Dependency | Version | Licence | Why it is needed |
+| Bağımlılık | Sürüm | Lisans | Neden gerekli |
 | --- | --- | --- | --- |
-| SDL2 | 2.32.4 | zlib | Window, keyboard/mouse input, and OpenGL context on Windows, Linux, and macOS. Writing this per platform is far more code and more risk than one well-supported library. |
-| OpenGL | system (`libGL`) | provided by the driver / Mesa | Drawing the scene. Used in compatibility-profile immediate mode, the same approach as the reference prototype. |
-| zlib | 1.3.1 | zlib | Optional. Writes screenshots as PNG. The build works without it and falls back to PPM. |
+| SDL2 | 2.32.4 | zlib | Pencere, klavye/fare girdisi ve OpenGL bağlamı. Bunu her platform için elle yazmak çok daha fazla kod ve risk demektir. |
+| OpenGL | sistem (`libGL`) | sürücü / Mesa | Sahneyi çizmek için. Referans prototiple aynı yaklaşım: compatibility-profile immediate mode. |
+| zlib | 1.3.1 | zlib | İsteğe bağlı. Ekran görüntüsünü PNG yazar. Yoksa PPM yazılır ve uygulama çalışmaya devam eder. |
 
-There are no vendored binaries, no downloaded assets, and no model weights. Every
-shape in the town is generated from code at startup.
+Depoda gömülü ikili dosya, indirilmiş varlık veya model ağırlığı yoktur.
+Şehirdeki her şekil çalışma anında kodla üretilir. Ayrıntılar:
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-## Repository layout
+## Depo düzeni
 
 ```text
-src/core/      world generation, pathfinding, simulation, camera  (no graphics)
-src/app/       main loop, session state, screenshot writing
-src/render/    OpenGL renderer (reads simulation state, never decides it)
-src/ui/        bitmap font and the HUD overlay
-tests/         headless tests for everything above except the GL layer
-reference/     the original Win32/OpenGL prototype, kept as history
-docs/          vision, scope, architecture, roadmap, quality gates
+src/core/      dünya üretimi, yol bulma, simülasyon, kamera  (grafik yok)
+src/app/       ana döngü, oturum durumu, ekran görüntüsü
+src/render/    OpenGL görüntüleyici (durumu okur, karar vermez)
+src/ui/        bit eşlem yazı tipi, yerelleştirme, HUD katmanı
+tests/         penceresiz testler (SDL/OpenGL gerekmez)
+tools/         paketleme ve doğrulama betikleri
+site/          GitHub Pages proje sayfası (HTML/CSS/JS, framework yok)
+reference/     özgün Win32/OpenGL prototipi, tarih olarak
+docs/          vizyon, kapsam, mimari, yol haritası, kalite kapıları
 ```
 
-## Why this exists
+## Yol haritası
 
-The project started from a single Win32/OpenGL C++ file. That file is preserved
-in [`reference/win32-minicity/main.cpp`](reference/win32-minicity/README.md) as
-history: it includes `<windows.h>` directly and cannot be compiled on Linux or
-macOS as written. TinyTown keeps its intent — a small town you can walk through,
-drawn entirely from code — and rebuilds it on a portable shell.
+Sonraki adımlar ayrı ve ölçülebilir görevlerdir. Hiçbiri tamamlanmış gibi
+gösterilmez.
 
-The design principle:
+**v0.2 — Üretim ve paylaşılabilir medya çıktıları (planlandı).**
+Deterministik animasyon karesi dizisi (`--capture-sequence <dizin> --frames <n>
+--fps <n>`), kodla sentezlenen ortam sesi ve ses düzeyi kontrolü, WAV dışa
+aktarımı, isteğe bağlı FFmpeg ile MP4. Temel uygulama FFmpeg olmadan ve ses
+aygıtı olmadan çalışmaya devam etmelidir. Üretilen ses prosedüreldir, yapay
+zekâ TTS değildir.
 
-> The smallest whole thing that works, then only the complexity that a proven
-> need requires.
+**v0.3 — Daha geniş erişim ve tarayıcı değerlendirmesi (planlandı).**
+Yerel Windows ve Linux paketlerinin yeniden doğrulanması; C++ çekirdeğin
+platform başlıklarından bağımsızlığının değerlendirilmesi; WebGL 2 / GLES
+uyumlu yeni bir görüntüleyici ve Emscripten derleme hedefi için fizibilite.
+Çalışan bir tarayıcı prototipi yayımlanıp denenmeden "tarayıcı sürümü var"
+denmeyecek.
 
-Success is measured by whether someone can clone the repository, follow a few
-commands, walk around the town, watch the agents work, understand what one of
-them is doing, and reset the world. Not by line count.
+Ayrıntılar ve kabul koşulları: [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## Documentation
+## Proje neden var
 
-- [Project vision](docs/PROJECT-VISION.md)
-- [Product scope](docs/PRODUCT-SCOPE.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Quality gates and last results](docs/QUALITY-GATES.md)
-- [Coding-agent task — Türkçe](docs/OPENHANDS-TASK-TR.md)
-- [Coding-agent task — English](docs/OPENHANDS-TASK-EN.md)
-- [Reference prototype](reference/win32-minicity/README.md)
+Proje tek bir Win32/OpenGL C++ dosyası olarak başladı. O dosya
+[`reference/win32-minicity/main.cpp`](reference/win32-minicity/README.md)
+yolunda tarih olarak saklanır: doğrudan `<windows.h>` içerir ve yazıldığı
+hâliyle Linux veya macOS'ta derlenemez. TinyTown onun amacını korur — kodla
+çizilen, içinde yürüyebileceğiniz küçük bir şehir — ve taşınabilir bir kabuk
+üzerine yeniden kurar.
+
+Tasarım ilkesi:
+
+> Önce çalışan en küçük bütün. Sonra kanıtlanmış ihtiyaç kadar karmaşıklık.
+
+Başarı, satır sayısıyla değil; birinin depoyu klonlayıp birkaç komutla
+derleyebilmesi, şehirde gezebilmesi, ajanları izleyebilmesi, birinin ne
+yaptığını anlayabilmesi ve dünyayı sıfırlayabilmesiyle ölçülür.
+
+## Belgeler
+
+- [Proje vizyonu](docs/PROJECT-VISION.md)
+- [Ürün kapsamı](docs/PRODUCT-SCOPE.md)
+- [Mimari](docs/ARCHITECTURE.md)
+- [Yol haritası](docs/ROADMAP.md)
+- [Kalite kapıları ve son sonuçlar](docs/QUALITY-GATES.md)
+- [Sürüm notları — v0.1.0](docs/RELEASE-NOTES-v0.1.0.md)
+- [Üçüncü taraf bildirimleri](THIRD-PARTY-NOTICES.md)
+- [English README](README.en.md)
+- [Başlangıç prototipi](reference/win32-minicity/README.md)
+
+## Lisans
+
+MIT. Ayrıntılar: [LICENSE](LICENSE).

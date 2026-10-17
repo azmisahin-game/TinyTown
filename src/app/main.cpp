@@ -119,8 +119,9 @@ bool parseArgs(int argc, char** argv, Options& options) {
         };
 
         if (arg == "--help" || arg == "-h") {
+            // Do not return here: a later --lang must still be honoured, so
+            // "--help --lang en" prints English help.
             options.showHelp = true;
-            return true;
         } else if (arg == "--seed") {
             const char* v = nextValue("--seed");
             if (!v) return false;

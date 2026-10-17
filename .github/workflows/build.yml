@@ -261,16 +261,37 @@ jobs:
             Write-Error "CMakeCache.txt not found at $cache"
             exit 1
           }
-          $line = Select-String -LiteralPath $cache -Pattern '^SDL2_DIR:PATH=' | Select-Object -First 1
-          if (-not $line) {
+
+          # Match any entry type (PATH, UNINITIALIZED, STRING, ...) because CMake
+          # does not always record a -D cache variable as PATH.
+          $match = @(Select-String -LiteralPath $cache -Pattern '^SDL2_DIR:')
+          if ($match.Count -eq 0) {
+            Write-Host '--- every SDL2 entry in CMakeCache.txt ---'
+            $all = @(Select-String -LiteralPath $cache -Pattern 'SDL2')
+            if ($all.Count -eq 0) {
+              Write-Host '  <no line mentions SDL2 at all>'
+            } else {
+              foreach ($entry in $all) { Write-Host ("  {0}" -f $entry.Line) }
+            }
             Write-Error 'SDL2_DIR was not recorded in CMakeCache.txt'
             exit 1
           }
-          $resolved = $line.Line.Substring('SDL2_DIR:PATH='.Length)
+
+          $line = $match[0].Line
+          Write-Host "CMakeCache entry: $line"
+          $resolved = $line.Substring($line.IndexOf('=') + 1).Trim().Trim('"')
           Write-Host "CMake resolved SDL2_DIR=$resolved"
-          $expected = (Join-Path $env:SDL2_ROOT 'cmake')
-          if ($resolved -notlike "$expected*") {
-            Write-Error "CMake did not use the installed SDL2 SDK. Expected $expected, got $resolved"
+
+          $expected = Join-Path $env:SDL2_ROOT 'cmake'
+          # Normalise separators and compare with an ordinal, case-insensitive
+          # prefix test. This avoids wildcard semantics, where a path containing
+          # '[' or ']' would be treated as a character class.
+          $resolvedNorm = $resolved.Replace('/', '\').TrimEnd('\')
+          $expectedNorm = $expected.Replace('/', '\').TrimEnd('\')
+          $isExpected = $resolvedNorm.StartsWith($expectedNorm,
+                                                 [System.StringComparison]::OrdinalIgnoreCase)
+          if (-not $isExpected) {
+            Write-Error "CMake did not use the installed SDL2 SDK. Expected $expectedNorm, got $resolvedNorm"
             exit 1
           }
           Write-Host 'Confirmed: CMake used the SDL2 SDK installed by this job'

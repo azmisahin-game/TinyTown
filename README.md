@@ -30,7 +30,7 @@ covered by CI compilation and a headless test run; see
 | Pause, resume, reset world, reset one agent | Working |
 | Headless simulation tests | 56 passing |
 | Offscreen screenshot (`--screenshot`) | Working |
-| Windows CI (MSVC) build + tests | Configured, not yet observed passing |
+| Windows CI (MSVC) build + tests | Fixed; verification run in progress |
 | Audio, image/video export, AI adapters | **Not implemented** (later milestones) |
 
 ## Build
@@ -61,15 +61,17 @@ ctest --test-dir build --output-on-failure
 ./build/tinytown
 ```
 
-### Windows (build instructions; not yet observed passing)
+### Windows (build instructions)
 
 CI uses the official SDL2 development archive. The same steps work locally in a
-Developer Command Prompt:
+Developer Command Prompt. The archive's top-level folder is `SDL2-<version>`
+(not `SDL2-<version>-VC`), and its CMake package config lives in
+`<root>\cmake\sdl2-config.cmake`:
 
 ```powershell
 # Download and extract the SDL2-devel-2.32.4-VC.zip release to C:\SDL2
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-      -DSDL2_DIR="C:\SDL2\lib\cmake\SDL2"
+      -DSDL2_DIR="C:\SDL2\cmake"
 cmake --build build --config Release --parallel
 ctest --test-dir build -C Release --output-on-failure
 copy C:\SDL2\lib\x64\SDL2.dll build\Release\
@@ -188,13 +190,17 @@ and the last recorded results.
 | Platform | Configured | Compiled | Tests run | Application launched |
 | --- | --- | --- | --- | --- |
 | Linux (GCC 14, Debian 13) | Yes | Yes | Yes — 56 passing | Yes, under Xvfb with Mesa llvmpipe |
-| Windows (MSVC 2022) | CI workflow only | CI workflow only | CI workflow only | **No** |
+| Windows (MSVC 2022) | CI only | CI only | CI only | **No** |
 
 "Launched under Xvfb with Mesa llvmpipe" means the real binary created a real
 OpenGL context, rendered frames, and wrote a real PNG. It is not a claim that a
-human clicked through the interface on a desktop. macOS has not been configured
-or compiled at all. The Windows job is written and committed but has not been
-observed running.
+human clicked through the interface on a desktop.
+
+Windows is compiled and tested by CI on a GitHub-hosted runner. That runner has
+no usable display or GPU, so the interactive GUI and its OpenGL rendering have
+**not** been exercised on Windows; the CI job only starts the executable with
+`--help` to check process start-up, argument parsing and exit codes. macOS has
+not been configured or compiled at all.
 
 ## Not implemented in v0.1
 

@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # ---------------------------------------------------------------------------
   # Linux: real configure, build, and headless test run.
@@ -65,34 +68,212 @@ jobs:
   windows:
     name: Windows (MSVC, headless tests)
     runs-on: windows-2022
+    env:
+      SDL2_VERSION: "2.32.4"
+      SDL2_ROOT: "C:\\SDL2"
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Cache SDL2
+      - name: Cache SDL2 SDK
         id: cache-sdl2
         uses: actions/cache@v4
         with:
           path: C:\SDL2
-          key: sdl2-2.32.4-vc-windows
+          key: sdl2-${{ env.SDL2_VERSION }}-vc-windows-sdk
 
-      - name: Download SDL2 development libraries
-        if: steps.cache-sdl2.outputs.cache-hit != 'true'
+      # Restores the SDK from cache or downloads it. Either way the SDK is
+      # validated before use, so a truncated cache or a partial download can
+      # never be treated as success.
+      #
+      # The SDL2-devel ZIP contains a single top-level folder named
+      # "SDL2-<version>" (NOT "SDL2-<version>-VC"), and its CMake package config
+      # lives in "<root>/cmake/sdl2-config.cmake" (NOT "<root>/lib/cmake/SDL2").
+      # The root folder is therefore discovered from the archive rather than
+      # assumed, and the layout is verified before the SDK is installed.
+      - name: Verify or install SDL2 SDK
         shell: pwsh
         run: |
-          $url = 'https://github.com/libsdl-org/SDL/releases/download/release-2.32.4/SDL2-devel-2.32.4-VC.zip'
-          Invoke-WebRequest -Uri $url -OutFile SDL2.zip
-          Expand-Archive -Path SDL2.zip -DestinationPath C:\
-          Move-Item C:\SDL2-2.32.4-VC C:\SDL2
+          $ErrorActionPreference = 'Stop'
+          $version  = $env:SDL2_VERSION
+          $sdkRoot  = $env:SDL2_ROOT
+          $required = @(
+            'cmake\sdl2-config.cmake',
+            'cmake\sdl2-config-version.cmake',
+            'include\SDL.h',
+            'lib\x64\SDL2.lib',
+            'lib\x64\SDL2.dll'
+          )
+          $sources = @(
+            "https://www.libsdl.org/release/SDL2-devel-$version-VC.zip",
+            "https://github.com/libsdl-org/SDL/releases/download/release-$version/SDL2-devel-$version-VC.zip"
+          )
+
+          function Test-SdlSdk {
+            param([string]$Root, [string[]]$Files)
+            if (-not (Test-Path -LiteralPath $Root -PathType Container)) { return $false }
+            foreach ($relative in $Files) {
+              $path = Join-Path $Root $relative
+              if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+              if ((Get-Item -LiteralPath $path).Length -le 0) { return $false }
+            }
+            return $true
+          }
+
+          function Show-SdkDiagnostics {
+            param([string]$Root, [string]$ZipPath, [string[]]$Files, [string[]]$Urls)
+            Write-Host '--- SDL2 diagnostics ---'
+            Write-Host "Expected SDK root : $Root"
+            Write-Host 'Attempted URLs    :'
+            foreach ($u in $Urls) { Write-Host "  $u" }
+            if ($ZipPath -and (Test-Path -LiteralPath $ZipPath)) {
+              Write-Host "Archive path/size : $ZipPath ($((Get-Item -LiteralPath $ZipPath).Length) bytes)"
+            } else {
+              Write-Host 'Archive path/size : not present'
+            }
+            if (Test-Path -LiteralPath $Root -PathType Container) {
+              $topLevel = Get-ChildItem -LiteralPath $Root | Select-Object -ExpandProperty Name
+              Write-Host "Top-level entries : $($topLevel -join ', ')"
+            } else {
+              Write-Host 'Top-level entries : <root does not exist>'
+            }
+            Write-Host 'Required file status:'
+            foreach ($relative in $Files) {
+              $path = Join-Path $Root $relative
+              if (Test-Path -LiteralPath $path -PathType Leaf) {
+                Write-Host ("  OK      {0} ({1} bytes)" -f $relative, (Get-Item -LiteralPath $path).Length)
+              } else {
+                Write-Host ("  MISSING {0}" -f $relative)
+              }
+            }
+            Write-Host '--- end diagnostics ---'
+          }
+
+          # Diagnostics are printed before throwing, because $ErrorActionPreference
+          # is 'Stop' and Write-Error would terminate before they ran.
+          function Stop-SdlSetup {
+            param([string]$Message, [string]$Root, [string]$ZipPath, [string[]]$Files, [string[]]$Urls)
+            Show-SdkDiagnostics -Root $Root -ZipPath $ZipPath -Files $Files -Urls $Urls
+            throw $Message
+          }
+
+          # 1. A cache hit is only usable if the SDK is actually complete.
+          if (Test-SdlSdk -Root $sdkRoot -Files $required) {
+            Write-Host "SDL2 SDK already present and validated at $sdkRoot"
+            exit 0
+          }
+          if (Test-Path -LiteralPath $sdkRoot) {
+            Write-Host "SDL2 SDK at $sdkRoot is incomplete or corrupt; reinstalling."
+            Remove-Item -LiteralPath $sdkRoot -Recurse -Force
+          }
+
+          # 2. Download with bounded retries and explicit failure.
+          $zipPath = Join-Path $env:RUNNER_TEMP "SDL2-devel-$version-VC.zip"
+          if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force }
+
+          $downloaded = $false
+          $lastError  = $null
+          foreach ($url in $sources) {
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+              try {
+                Write-Host "Downloading $url (attempt $attempt of 3)"
+                Invoke-WebRequest -Uri $url -OutFile $zipPath -MaximumRedirection 10
+                $size = (Get-Item -LiteralPath $zipPath).Length
+                if ($size -lt 1MB) {
+                  throw "Archive is only $size bytes; expected several MB"
+                }
+                Write-Host "Downloaded $zipPath ($size bytes)"
+                $downloaded = $true
+                break
+              } catch {
+                $lastError = $_.Exception.Message
+                Write-Warning "Attempt $attempt failed for ${url}: $lastError"
+                Start-Sleep -Seconds (2 * $attempt)
+              }
+            }
+            if ($downloaded) { break }
+            Write-Warning 'Falling back to the next source.'
+          }
+
+          if (-not $downloaded) {
+            Stop-SdlSetup -Message "Could not download the SDL2 SDK from any known source. Last error: $lastError" `
+                          -Root $sdkRoot -ZipPath $zipPath -Files $required -Urls $sources
+          }
+
+          # 3. Extract under RUNNER_TEMP, then discover the real SDK root instead
+          #    of assuming the folder name.
+          $extractDir = Join-Path $env:RUNNER_TEMP 'sdl2-extract'
+          if (Test-Path -LiteralPath $extractDir) { Remove-Item -LiteralPath $extractDir -Recurse -Force }
+          New-Item -ItemType Directory -Path $extractDir | Out-Null
+          Expand-Archive -LiteralPath $zipPath -DestinationPath $extractDir -Force
+
+          $candidateRoots = @(Get-ChildItem -LiteralPath $extractDir -Directory | Select-Object -ExpandProperty FullName)
+          if ($candidateRoots.Count -eq 0) { $candidateRoots = @($extractDir) }
+
+          $sdkSource = $null
+          foreach ($candidate in $candidateRoots) {
+            if (Test-Path -LiteralPath (Join-Path $candidate 'cmake\sdl2-config.cmake')) {
+              $sdkSource = $candidate
+              break
+            }
+          }
+
+          if (-not $sdkSource) {
+            Stop-SdlSetup -Message ('Could not locate the SDL2 SDK root inside the archive. ' +
+                                    'Candidate top-level folders: ' + ($candidateRoots -join ', ')) `
+                          -Root $extractDir -ZipPath $zipPath -Files $required -Urls $sources
+          }
+          Write-Host "Discovered SDL2 SDK root: $sdkSource"
+
+          # 4. Validate the discovered tree before installing it.
+          if (-not (Test-SdlSdk -Root $sdkSource -Files $required)) {
+            Stop-SdlSetup -Message "SDL2 SDK at $sdkSource is missing required files." `
+                          -Root $sdkSource -ZipPath $zipPath -Files $required -Urls $sources
+          }
+
+          # 5. Install and re-validate at the final location.
+          Move-Item -LiteralPath $sdkSource -Destination $sdkRoot
+          if (-not (Test-SdlSdk -Root $sdkRoot -Files $required)) {
+            Stop-SdlSetup -Message "SDL2 SDK installation at $sdkRoot failed validation." `
+                          -Root $sdkRoot -ZipPath $zipPath -Files $required -Urls $sources
+          }
+          Write-Host "SDL2 SDK installed and validated at $sdkRoot"
 
       - name: Configure
         shell: pwsh
         run: |
+          # SDL2_DIR must point at the folder that holds sdl2-config.cmake, which
+          # is <root>\cmake in the official SDL2-devel archive.
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-            -DSDL2_DIR="C:\SDL2\lib\cmake\SDL2" `
-            -DCMAKE_BUILD_TYPE=Release
+            -DSDL2_DIR="$env:SDL2_ROOT\cmake"
+
+      - name: Confirm the intended SDL2 SDK was resolved
+        # find_package(SDL2) accepts any SDL2 it can find, so this fails the job
+        # unless CMake actually used the SDK installed above. Without it the job
+        # could pass while linking an unrelated SDL2.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cache = '.\build\CMakeCache.txt'
+          if (-not (Test-Path -LiteralPath $cache -PathType Leaf)) {
+            Write-Error "CMakeCache.txt not found at $cache"
+            exit 1
+          }
+          $line = Select-String -LiteralPath $cache -Pattern '^SDL2_DIR:PATH=' | Select-Object -First 1
+          if (-not $line) {
+            Write-Error 'SDL2_DIR was not recorded in CMakeCache.txt'
+            exit 1
+          }
+          $resolved = $line.Line.Substring('SDL2_DIR:PATH='.Length)
+          Write-Host "CMake resolved SDL2_DIR=$resolved"
+          $expected = (Join-Path $env:SDL2_ROOT 'cmake')
+          if ($resolved -notlike "$expected*") {
+            Write-Error "CMake did not use the installed SDL2 SDK. Expected $expected, got $resolved"
+            exit 1
+          }
+          Write-Host 'Confirmed: CMake used the SDL2 SDK installed by this job'
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -105,10 +286,31 @@ jobs:
 
       - name: Stage SDL2 runtime DLL next to the executable
         shell: pwsh
-        run: Copy-Item C:\SDL2\lib\x64\SDL2.dll .\build\Release\ -Force
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dll = Join-Path $env:SDL2_ROOT 'lib\x64\SDL2.dll'
+          if (-not (Test-Path -LiteralPath $dll -PathType Leaf)) {
+            Write-Error "SDL2 runtime DLL is missing at $dll"
+            exit 1
+          }
+          Copy-Item -LiteralPath $dll -Destination .\build\Release\ -Force
+          Write-Host "Staged $dll next to the executable"
 
-      - name: Confirm the executable links and reports its options
-        # Running the GUI itself is not possible on a headless runner. Launching
-        # with --help exercises process start-up, argument parsing, and exit
-        # codes without needing a display.
-        run: .\build\Release\tinytown.exe --help
+      - name: Confirm the executable starts and reports its options
+        # This exercises process start-up, argument parsing and exit codes only.
+        # A headless runner has no usable display or GPU, so this is NOT evidence
+        # that the interactive GUI or its OpenGL rendering works on Windows.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = '.\build\Release\tinytown.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            Write-Error "Executable not found at $exe"
+            exit 1
+          }
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "tinytown.exe --help exited with code $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host 'tinytown.exe --help exited with code 0'

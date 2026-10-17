@@ -44,6 +44,17 @@ if(TINYTOWN_BUILD_APP)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
 
+    # Report which SDL2 was actually resolved. find_package(SDL2) will happily
+    # accept any SDL2 it can find (a system package, a leftover SDK, or a
+    # Windows-only archive picked up by a stray SDL2_DIR), so printing the
+    # resolved location makes a wrong or missing SDK visible in the log instead
+    # of failing later at link time.
+    if(SDL2_DIR)
+        message(STATUS "TinyTown: SDL2 found via SDL2_DIR=${SDL2_DIR}")
+    elseif(SDL2_INCLUDE_DIRS)
+        message(STATUS "TinyTown: SDL2 include dirs: ${SDL2_INCLUDE_DIRS}")
+    endif()
+
     add_executable(tinytown
         src/app/main.cpp
         src/app/image_io.cpp

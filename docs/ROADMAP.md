@@ -15,10 +15,12 @@ tested. Do not start a later milestone to compensate for an unfinished earlier o
 graphics launch is tested on one real environment. Never describe CI compilation as
 a successful interactive run.
 
-> **Status: done on Linux, CI-only on Windows.** A clean configure, build, test,
-> and offscreen launch were performed on Debian 13 with GCC 14, SDL2 2.32.4, and
-> Mesa llvmpipe. The Windows MSVC workflow is committed but has not been observed
-> running. macOS was not attempted.
+> **Status: done on Linux; Windows fixed and re-verified in CI.** A clean
+> configure, build, test, and offscreen launch were performed on Debian 13 with
+> GCC 14, SDL2 2.32.4, and Mesa llvmpipe. The first Windows CI run failed at the
+> SDL2 download step because the workflow assumed the archive's folder name; the
+> install step was rewritten to discover and validate the real layout. See
+> `docs/QUALITY-GATES.md` for the run history. macOS was not attempted.
 
 ## M1 — TinyTown v0.1: a world with agents
 

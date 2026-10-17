@@ -127,6 +127,17 @@ Kept as design only, per the roadmap:
 A shared core is the goal, not proof that every API is portable. Record
 separately whether each platform was configured, compiled, tested, and actually
 launched. In this repository Linux was configured, compiled, tested, and launched
-under Xvfb with software GL. Windows has a committed CI job that has not been
-observed running. macOS has not been touched.
+under Xvfb with software GL. Windows is configured, compiled and tested by CI on
+a hosted runner that has no usable display, so the interactive GUI and its OpenGL
+rendering are still unverified on Windows. macOS has not been touched.
+
+Two Windows-specific details are worth remembering, because both caused real
+failures:
+
+- The official `SDL2-devel-<version>-VC.zip` extracts to a folder named
+  `SDL2-<version>` and places its CMake package config in `<root>/cmake`. The
+  build passes `SDL2_DIR=<root>/cmake`.
+- Because the program defines `SDL_MAIN_HANDLED` and supplies its own `main`, it
+  must call `SDL_SetMainReady()` before `SDL_Init()`.
+
 

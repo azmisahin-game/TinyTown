@@ -16,6 +16,8 @@ constexpr float kLineAdvance = static_cast<float>(font::kCellHeight);
 
 void glColor4(float r, float g, float b, float a) { glColor4f(r, g, b, a); }
 
+// Formats a float with a fixed number of decimals. snprintf is used instead of
+// std::to_string to keep the HUD output short and stable.
 std::string formatFloat(float value, int decimals) {
     char buffer[64];
     std::snprintf(buffer, sizeof(buffer), "%.*f", decimals, static_cast<double>(value));

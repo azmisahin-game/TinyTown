@@ -9,7 +9,7 @@ observed state of this repository, not intentions.
 - [x] Native build succeeds on each platform claimed in the README.
       Linux verified locally. Windows verified by CI (configure, build, ctest):
       run [39009303637](https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637)
-      passed with 56/56 tests and zero MSVC warnings.
+      passed with 77/77 tests and zero MSVC warnings.
 - [x] Unit tests cover deterministic world generation and agent/task/path logic.
 - [x] CI runs the documented build and test commands.
       Both jobs are green as of run `39009303637`. Earlier failures and their
@@ -163,10 +163,46 @@ types. The PowerShell syntax of every new step was parse-checked.
       `--screenshot` from the real build.
 - [x] Any bundled assets or third-party dependencies have licence attribution.
       SDL2 (zlib), OpenGL (driver/Mesa), zlib (zlib). No assets are bundled.
-- [ ] Release archive works on a clean machine or its runtime requirements are
-      stated. Not attempted; there is no release archive yet.
-- [ ] If GitHub Pages is enabled, it deploys a real, current site. No Pages site
-      exists yet.
+- [x] Release archive works on a clean machine or its runtime requirements are
+      stated. Both packages are published and were downloaded again and
+      inspected. See "Release and Pages evidence" below.
+- [x] If GitHub Pages is enabled, it deploys a real, current site.
+      The `pages` workflow verified and deployed the site; the live URL was
+      fetched and its HTML, screenshot, CSS and JS all returned HTTP 200.
+
+## Release and Pages evidence
+
+Release: <https://github.com/azmisahin-game/TinyTown/releases/tag/v0.1.0>
+
+Published assets, as reported by the GitHub API and re-downloaded for checking:
+
+| Asset | Size | Verified |
+| --- | --- | --- |
+| `TinyTown-v0.1.0-linux-x64.tar.gz` | 114,382 bytes | Contents listed; binary run; PNG rendered |
+| `TinyTown-v0.1.0-windows-x64.zip` | 709,330 bytes | Contents listed; `SDL2.dll` and `tinytown.exe` present |
+
+The Linux archive contains exactly: `tinytown`, `QUICKSTART_TR.txt`,
+`QUICKSTART_EN.txt`, `LICENSE`, `THIRD-PARTY-NOTICES.md`,
+`RUNTIME-REQUIREMENTS.txt`. After extraction it reported **zero** unresolved
+shared libraries under `ldd`, ran `--help` in Turkish and in English, and
+rendered a real 1280x720 PNG under Xvfb.
+
+The Windows archive contains exactly: `tinytown.exe`, `SDL2.dll`, the two
+quick-start files, `LICENSE`, `THIRD-PARTY-NOTICES.md`,
+`RUNTIME-REQUIREMENTS.txt`. The packaging script re-extracts the archive and
+starts the extracted `tinytown.exe` with `--help`, which is the strongest check
+possible on a runner with no display.
+
+Pages: <https://azmisahin-game.github.io/TinyTown/>
+
+The site workflow (`verify` then `deploy`) both succeeded. Fetched live:
+`index.html` returned HTTP 200 with the Turkish heading, and
+`assets/tinytown-v0.1-town.png`, `style.css` and `app.js` each returned HTTP 200.
+
+`tools/check_site.js` runs in that workflow and checks that all 84 page
+translation keys exist in both languages, that the two tables have identical key
+sets, that no key is unused, and that the page does not advertise a browser
+build.
 
 ## Last recorded results
 
@@ -189,7 +225,7 @@ $ ctest --test-dir build --output-on-failure
 100% tests passed, 0 tests failed out of 1
 
 $ ./build/tinytown_tests
-56 passed, 0 failed, 0 assertion failure(s)
+77 passed, 0 failed, 0 assertion failure(s)
 ```
 
 Test coverage by suite:
@@ -201,7 +237,40 @@ Test coverage by suite:
 | Simulation | 14 | reset determinism, task/state transitions, large and negative `dt`, obstacle-free motion, invalid targets |
 | Camera | 7 | frame-rate independence, bounds, pitch clamp, diagonal speed |
 | Session | 11 | pause, selection clamping, frame-time clamp, step budget, focus loss |
-| Font | 7 | glyph coverage, row width, digit distinctness, case folding |
+| Font | 12 | ASCII and Turkish glyph coverage, table ordering, diacritic placement, distinctness from ASCII bases, replacement box |
+| Localization | 16 | key coverage in both languages, required Turkish terminology, UTF-8 decode and round-trip, invalid-input termination, language-aware case folding, number formatting, and that every UI string is drawable |
+
+## Site checks
+
+`tools/check_site.js` validates the Pages site without a browser. It runs in the
+`pages` workflow, so a broken site cannot be deployed:
+
+```text
+$ node tools/check_site.js
+ok: found 84 translation keys in index.html
+ok: app.js defines languages: tr, en
+ok: tr covers every key used by the page
+ok: en covers every key used by the page
+ok: tr and en have identical key sets (84 keys)
+ok: no unused translation keys
+ok: the Turkish table contains Turkish characters
+ok: screenshot exists: assets/tinytown-v0.1-town.png
+ok: index.html does not advertise a browser build
+
+all site checks passed
+```
+
+## One-time repository settings
+
+The Pages workflow cannot change these itself. Recorded here so a fresh clone of
+the repository is not left guessing:
+
+- **Settings → Pages → Build and deployment → Source** must be
+  **GitHub Actions**. This was already set when the workflow first ran; the
+  GitHub API reported `build_type: workflow`.
+
+No other manual setting is required. The release workflow uses the automatic
+`GITHUB_TOKEN`, and `contents: write` is granted only to its publish job.
 
 ## Final report format for coding agents
 

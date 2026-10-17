@@ -17,7 +17,7 @@ a successful interactive run.
 
 > **Status: done on Linux and Windows.** A clean configure, build, test, and
 > offscreen launch were performed on Debian 13 with GCC 14, SDL2 2.32.4, and Mesa
-> llvmpipe. Windows is compiled and tested by CI (MSVC 2022, 56/56 tests). The
+> llvmpipe. Windows is compiled and tested by CI (MSVC 2022, 77/77 tests). The
 > first Windows CI run failed at the SDL2 download step because the workflow
 > assumed the archive's folder name; the install step was rewritten to discover
 > and validate the real layout. See `docs/QUALITY-GATES.md` for the run history.
@@ -50,8 +50,12 @@ agent, and reset the world. README claims match verified behaviour.
 **Gate:** captured files are valid and open in external viewers/players. Errors are
 surfaced clearly. The interactive experience remains usable when audio is disabled.
 
-> **Status: partially done.** Still-image capture exists (`--screenshot` writes a
-> real PNG, or PPM without zlib). Audio, image sequences, and WAV are not started.
+> **Status: still capture done; the rest is not started.** Still-image capture
+> exists (`--screenshot` writes a real PNG, or PPM without zlib), and it is
+> covered by the release workflow's smoke render. Deterministic frame
+> sequences, audio, and WAV export are **not** implemented. This milestone is
+> deliberately not started in the v0.1.0 productization task; it needs its own
+> task with its own acceptance criteria.
 
 ## M3 — Short clips
 

@@ -1,6 +1,16 @@
-# Website copy — draft for a future TinyTown project page
+# Website copy
 
-> This is draft copy, not evidence that a website or browser build is live. Publish only after the corresponding capabilities exist.
+> **The site is live.** The published page is `site/index.html`, deployed to
+> <https://azmisahin-game.github.io/TinyTown/> by `.github/workflows/pages.yml`.
+> It has Turkish and English content, and the live version is the source of
+> truth.
+>
+> This file is kept as the English drafting reference for the copy. The older
+> draft below predates the bilingual site: it says "publish only after the
+> capabilities exist", which has now happened for the still-capture, packaging
+> and site parts. It still does **not** apply to a browser build, which does not
+> exist. When editing copy, edit `site/index.html` and `site/app.js`, then run
+> `node tools/check_site.js`.
 
 ## Hero
 

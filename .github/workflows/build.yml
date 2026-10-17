@@ -1,0 +1,114 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Linux: real configure, build, and headless test run.
+  # ---------------------------------------------------------------------------
+  linux:
+    name: Linux (GCC, headless tests)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build g++ \
+            libsdl2-dev libgl1-mesa-dev zlib1g-dev \
+            xvfb libgl1-mesa-dri
+
+      - name: Report toolchain versions
+        run: |
+          cmake --version | head -1
+          g++ --version | head -1
+          pkg-config --modversion sdl2
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run headless simulation tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Run test binary directly (explicit output)
+        run: ./build/tinytown_tests
+
+      - name: Verify the application starts and renders offscreen
+        # Xvfb gives a real X display; Mesa's llvmpipe provides a software
+        # OpenGL context. This proves the renderer runs, but it is NOT a claim
+        # that the GUI was manually exercised on a desktop.
+        run: |
+          xvfb-run -a -s "-screen 0 1280x720x24" \
+            ./build/tinytown --screenshot /tmp/ci-smoke.png --screenshot-seconds 5
+          test -s /tmp/ci-smoke.png
+          file /tmp/ci-smoke.png
+
+      - name: Upload smoke screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-smoke-screenshot
+          path: /tmp/ci-smoke.png
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Windows: real configure, build, and headless test run.
+  # ---------------------------------------------------------------------------
+  windows:
+    name: Windows (MSVC, headless tests)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache SDL2
+        id: cache-sdl2
+        uses: actions/cache@v4
+        with:
+          path: C:\SDL2
+          key: sdl2-2.32.4-vc-windows
+
+      - name: Download SDL2 development libraries
+        if: steps.cache-sdl2.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/libsdl-org/SDL/releases/download/release-2.32.4/SDL2-devel-2.32.4-VC.zip'
+          Invoke-WebRequest -Uri $url -OutFile SDL2.zip
+          Expand-Archive -Path SDL2.zip -DestinationPath C:\
+          Move-Item C:\SDL2-2.32.4-VC C:\SDL2
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DSDL2_DIR="C:\SDL2\lib\cmake\SDL2" `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Run headless simulation tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Run test binary directly (explicit output)
+        run: .\build\Release\tinytown_tests.exe
+
+      - name: Stage SDL2 runtime DLL next to the executable
+        shell: pwsh
+        run: Copy-Item C:\SDL2\lib\x64\SDL2.dll .\build\Release\ -Force
+
+      - name: Confirm the executable links and reports its options
+        # Running the GUI itself is not possible on a headless runner. Launching
+        # with --help exercises process start-up, argument parsing, and exit
+        # codes without needing a display.
+        run: .\build\Release\tinytown.exe --help

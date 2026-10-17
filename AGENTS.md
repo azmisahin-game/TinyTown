@@ -44,3 +44,49 @@ TinyTown is a compact C++ procedural-world and agent-simulation product. It shou
 ## Language and user-facing copy
 
 Technical identifiers and source comments may be English. The project README and user-visible instructions should be clear; keep the Turkish description while a concise English project summary can be included for discoverability.
+
+## Repository-specific knowledge (v0.1)
+
+Build commands that are known to work:
+
+```bash
+# Debian/Ubuntu dependencies
+sudo apt-get install -y cmake g++ libsdl2-dev libgl1-mesa-dev zlib1g-dev
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+./build/tinytown_tests            # 56 tests, no SDL/GL needed
+```
+
+Headless graphics on a machine with no desktop (this is how screenshots and CI
+smoke runs work — Xvfb gives a real X display and Mesa llvmpipe gives a real
+software OpenGL context):
+
+```bash
+sudo apt-get install -y xvfb libgl1-mesa-dri
+xvfb-run -a -s "-screen 0 1280x720x24" ./build/tinytown \
+    --screenshot /tmp/town.png --screenshot-seconds 14 \
+    --camera 6 28 --yaw 0.35 --pitch -0.40 --eye 14 --print-agents
+```
+
+`--print-agents` prints each agent's task, state, target, position and counters.
+Use it whenever a change touches simulation behaviour, so the claims in a report
+can be checked against real output rather than inferred from the picture.
+
+Layout rules worth preserving:
+
+- `src/core/` and `src/app/session.cpp` are the `tinytown_core` library. They must
+  stay free of SDL, OpenGL and platform headers so the tests stay headless.
+- `src/render/` and `src/app/main.cpp` are the only places that touch GL/SDL.
+- The renderer reads simulation state and must never decide task outcomes.
+- Determinism is a product contract: world generation uses the hand-written RNG
+  in `src/core/random.hpp`, not `<random>`, because the standard library does not
+  guarantee identical values across compilers. Do not swap it without re-checking
+  the determinism tests.
+- Agent movement and the pathfinder share the same walkability grid. The grid is
+  expanded by the agent radius at generation time, so collision is a centre-point
+  test. Changing one without the other will let agents clip through buildings.
+- `docs/media/tinytown-v0.1-town.png` must be regenerated with `--screenshot`
+  whenever the look changes. Never add a hand-made or concept image.
+

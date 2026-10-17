@@ -30,7 +30,7 @@ covered by CI compilation and a headless test run; see
 | Pause, resume, reset world, reset one agent | Working |
 | Headless simulation tests | 56 passing |
 | Offscreen screenshot (`--screenshot`) | Working |
-| Windows CI (MSVC) build + tests | Fixed; verification run in progress |
+| Windows CI (MSVC) build + tests | Passing in CI (56/56 tests) |
 | Audio, image/video export, AI adapters | **Not implemented** (later milestones) |
 
 ## Build
@@ -189,18 +189,20 @@ and the last recorded results.
 
 | Platform | Configured | Compiled | Tests run | Application launched |
 | --- | --- | --- | --- | --- |
-| Linux (GCC 14, Debian 13) | Yes | Yes | Yes — 56 passing | Yes, under Xvfb with Mesa llvmpipe |
-| Windows (MSVC 2022) | CI only | CI only | CI only | **No** |
+| Linux (GCC 13/14) | Yes | Yes | Yes — 56 passing | Yes, under Xvfb with Mesa llvmpipe |
+| Windows (MSVC 2022) | Yes (CI) | Yes (CI) | Yes (CI) — 56 passing | **No** |
 
 "Launched under Xvfb with Mesa llvmpipe" means the real binary created a real
 OpenGL context, rendered frames, and wrote a real PNG. It is not a claim that a
 human clicked through the interface on a desktop.
 
-Windows is compiled and tested by CI on a GitHub-hosted runner. That runner has
-no usable display or GPU, so the interactive GUI and its OpenGL rendering have
-**not** been exercised on Windows; the CI job only starts the executable with
-`--help` to check process start-up, argument parsing and exit codes. macOS has
-not been configured or compiled at all.
+Windows is compiled and tested by CI on a GitHub-hosted runner (run
+[39009303637](https://github.com/azmisahin-game/TinyTown/actions/runs/39009303637),
+56/56 tests, zero warnings). That runner has no usable display or GPU, so the
+interactive GUI and its OpenGL rendering have **not** been exercised on Windows;
+the CI job only starts the executable with `--help` to check process start-up,
+argument parsing and exit codes. macOS has not been configured or compiled at
+all.
 
 ## Not implemented in v0.1
 
